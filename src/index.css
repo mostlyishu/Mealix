@@ -1,0 +1,192 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f8f8f8;
+  color: #222;
+}
+
+button {
+  cursor: pointer;
+}
+
+main {
+  max-width: 1200px;
+  margin: auto;
+  padding: 30px 20px;
+}
+
+/* =========================
+   NAVBAR
+   ========================= */
+
+.navbar {
+  height: 70px;
+  padding: 0 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: white;
+  border-bottom: 1px solid #eee;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.nav-links {
+  display: flex;
+  gap: 30px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: #444;
+  font-size: 15px;
+}
+
+.nav-links a:hover {
+  color: #000;
+}
+
+.login-button {
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+}
+
+/* =========================
+   HERO SECTION
+   ========================= */
+
+.hero {
+  padding: 70px 50px;
+  border-radius: 20px;
+  background: #222;
+  color: white;
+  margin-bottom: 50px;
+}
+
+.hero-tag {
+  font-size: 13px;
+  letter-spacing: 2px;
+  font-weight: bold;
+}
+
+.hero h1 {
+  font-size: 48px;
+  max-width: 650px;
+  margin: 15px 0;
+}
+
+.hero p {
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+.hero-button {
+  margin-top: 15px;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+/* =========================
+   MENU SECTION
+   ========================= */
+
+.menu-section {
+  margin-bottom: 50px;
+}
+
+.food-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+/* =========================
+   FOOD CARD
+   ========================= */
+
+.food-card {
+  background: white;
+  padding: 18px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+}
+
+.food-image {
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60px;
+  background: #f1f1f1;
+  border-radius: 12px;
+}
+
+.food-category {
+  font-size: 13px;
+  color: #777;
+  margin-bottom: 5px;
+}
+
+.food-card h3 {
+  margin: 5px 0 15px;
+}
+
+.food-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.food-bottom button {
+  border: none;
+  padding: 8px 14px;
+  border-radius: 7px;
+}
+
+/* =========================
+   RESPONSIVE DESIGN
+   ========================= */
+
+@media (max-width: 800px) {
+  .food-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .hero {
+    padding: 40px 25px;
+  }
+
+  .hero h1 {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 500px) {
+  .navbar {
+    padding: 0 15px;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .food-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero h1 {
+    font-size: 30px;
+  }
+}
