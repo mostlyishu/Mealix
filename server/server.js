@@ -1,40 +1,40 @@
+const mysql = require("mysql2");
 const express = require("express");
 const cors = require("cors");
 
 const app = express();
+const db = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "",
+  database: "mealix"
+});
+db.connect((err) => {
+  if (err) {
+    console.error("Database connection failed:", err);
+    return;
+  }
+
+  console.log("Connected to MySQL!");
+});
 
 app.use(cors());
 app.use(express.json());
 
-const foods = [
-  {
-    id: 1,
-    name: "Paneer Tikka Burger",
-    price: 60,
-    category: "Burger"
-  },
-  {
-    id: 2,
-    name: "Veg Sandwich",
-    price: 50,
-    category: "Sandwich"
-  },
-  {
-    id: 3,
-    name: "Cold Coffee",
-    price: 70,
-    category: "Beverage"
-  },
-  {
-    id: 4,
-    name: "Masala Maggi",
-    price: 50,
-    category: "Snacks"
-  }
-];
 
 app.get("/api/foods", (req, res) => {
-  res.json(foods);
+  const sql = "SELECT * FROM foods";
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({
+        message: "Database error"
+      });
+    }
+
+    res.json(results);
+  });
 });
 
 app.get("/", (req, res) => {
