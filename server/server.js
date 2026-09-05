@@ -176,6 +176,76 @@ app.get("/api/profile", authMiddleware, (req, res) => {
   });
 });
 
+app.post("/api/orders", authMiddleware, (req, res) => {
+  const { items, total_amount } = req.body;
+
+  if (!items || items.length === 0) {
+    return res.status(400).json({
+      message: "Cart is empty"
+    });
+  }
+
+  if (!total_amount || total_amount <= 0) {
+    return res.status(400).json({
+      message: "Invalid order total"
+    });
+  }
+
+  const userId = req.user.id;
+
+  const orderSql = `
+    INSERT INTO orders (user_id, total_amount)
+    VALUES (?, ?)
+  `;
+
+  db.query(
+    orderSql,
+    [userId, total_amount],
+    (err, orderResult) => {
+      if (err) {
+        console.error(err);
+
+        return res.status(500).json({
+          message: "Failed to create order"
+        });
+      }
+
+      const orderId = orderResult.insertId;
+
+      const itemValues = items.map((item) => [
+        orderId,
+        item.food_id,
+        item.quantity
+      ]);
+
+      const itemSql = `
+        INSERT INTO order_items
+        (order_id, food_id, quantity)
+        VALUES ?
+      `;
+
+      db.query(
+        itemSql,
+        [itemValues],
+        (err) => {
+          if (err) {
+            console.error(err);
+
+            return res.status(500).json({
+              message: "Failed to save order items"
+            });
+          }
+
+          res.status(201).json({
+            message: "Order placed successfully",
+            orderId
+          });
+        }
+      );
+    }
+  );
+});
+
 app.listen(5001, () => {
   console.log("Mealix server running on http://localhost:5001");
 });
