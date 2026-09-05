@@ -1,7 +1,10 @@
+require("dotenv").config();
+
 const mysql = require("mysql2");
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 const db = mysql.createConnection({
@@ -143,14 +146,26 @@ app.post("/api/login", (req, res) => {
       });
     }
 
-    res.json({
-      message: "Login successful",
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email
-      }
-    });
+      const token = jwt.sign(
+          {
+              id: user.id,
+              email: user.email
+          },
+          process.env.JWT_SECRET,
+          {
+              expiresIn: "1d"
+          }
+      );
+
+      res.json({
+          message: "Login successful",
+          token,
+          user: {
+              id: user.id,
+              name: user.name,
+              email: user.email
+          }
+      });
   });
 });
 
