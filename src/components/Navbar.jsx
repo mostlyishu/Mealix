@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function Navbar() {
+  const { user, logout, isLoggedIn } = useAuth();
+
   return (
     <nav className="navbar">
-
       <div className="logo">
         🍴 Mealix
       </div>
@@ -15,18 +17,34 @@ function Navbar() {
         <Link to="/cart">Cart</Link>
       </div>
 
-          <Link to="/login">
-              <button className="login-button">
-                  Login
-              </button>
-          </Link>
+      <div>
+        {isLoggedIn ? (
+          <>
+            <span>Hi, {user.name}</span>
 
-          <Link to="/register">
+            <button
+              className="login-button"
+              onClick={logout}
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link to="/login">
               <button className="login-button">
-                  Register
+                Login
               </button>
-          </Link>
+            </Link>
 
+            <Link to="/register">
+              <button className="login-button">
+                Register
+              </button>
+            </Link>
+          </>
+        )}
+      </div>
     </nav>
   );
 }

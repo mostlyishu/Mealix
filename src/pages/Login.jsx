@@ -1,9 +1,89 @@
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+
 function Login() {
+  const { login } = useAuth();
+
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  });
+
+  const [message, setMessage] = useState("");
+
+  function handleChange(event) {
+    setFormData({
+      ...formData,
+      [event.target.name]: event.target.value
+    });
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    try {
+      const response = await fetch(
+        "http://localhost:5001/api/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(formData)
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message);
+      }
+
+      login(data.user, data.token);
+
+setMessage("Login successful!");
+
+      setFormData({
+        email: "",
+        password: ""
+      });
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
   return (
-    <div>
+    <main>
       <h1>Login</h1>
-      <p>Login to your Mealix account.</p>
-    </div>
+
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+        />
+
+        <br /><br />
+
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+        />
+
+        <br /><br />
+
+        <button type="submit">
+          Login
+        </button>
+      </form>
+
+      {message && <p>{message}</p>}
+    </main>
   );
 }
 
