@@ -15,11 +15,17 @@ function Navbar() {
         <Link to="/cart">Cart</Link>
       </div>
 
-      <Link to="/login">
-        <button className="login-button">
-          Login
-        </button>
-      </Link>
+          <Link to="/login">
+              <button className="login-button">
+                  Login
+              </button>
+          </Link>
+
+          <Link to="/register">
+              <button className="login-button">
+                  Register
+              </button>
+          </Link>
 
     </nav>
   );

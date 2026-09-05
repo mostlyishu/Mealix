@@ -7,6 +7,7 @@ import Menu from "./pages/Menu";
 import Orders from "./pages/Orders";
 import Login from "./pages/Login";
 import CartPage from "./pages/CartPage";
+import Register from "./pages/Register";
 
 import { CartProvider } from "./context/CartContext";
 
@@ -16,13 +17,14 @@ function App() {
       <BrowserRouter>
         <Navbar />
 
-        <Routes>
+      <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/menu" element={<Menu />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/cart" element={<CartPage />} />
-       <Route path="/login" element={<Login />} />
-  </Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Routes>
       </BrowserRouter>
     </CartProvider>
   );
