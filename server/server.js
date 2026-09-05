@@ -5,6 +5,7 @@ const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const authMiddleware = require("./middleware/authMiddleware");
 
 const app = express();
 const db = mysql.createConnection({
@@ -166,6 +167,12 @@ app.post("/api/login", (req, res) => {
               email: user.email
           }
       });
+  });
+});
+app.get("/api/profile", authMiddleware, (req, res) => {
+  res.json({
+    message: "You are authenticated!",
+    user: req.user
   });
 });
 
