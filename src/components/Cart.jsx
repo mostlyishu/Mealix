@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 function Cart() {
   const {
@@ -12,6 +13,7 @@ function Cart() {
   } = useCart();
 
   const { isLoggedIn } = useAuth();
+  const navigate = useNavigate();
 
   const [message, setMessage] = useState("");
   const [placingOrder, setPlacingOrder] = useState(false);
@@ -72,10 +74,13 @@ function Cart() {
         throw new Error(data.message);
       }
 
-      setMessage(
-        `Order placed successfully! Order ID: ${data.orderId}`
-      );
-      clearCart();
+        clearCart();
+
+        navigate("/order-success", {
+            state: {
+                orderId: data.orderId
+            }
+        });
     } catch (error) {
       setMessage(error.message);
     } finally {
