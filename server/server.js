@@ -246,6 +246,40 @@ app.post("/api/orders", authMiddleware, (req, res) => {
   );
 });
 
+app.get("/api/orders", authMiddleware, (req, res) => {
+  const userId = req.user.id;
+
+  const sql = `
+    SELECT
+      orders.id AS order_id,
+      orders.total_amount,
+      orders.status,
+      orders.created_at,
+      foods.name AS food_name,
+      foods.price,
+      order_items.quantity
+    FROM orders
+    JOIN order_items
+      ON orders.id = order_items.order_id
+    JOIN foods
+      ON order_items.food_id = foods.id
+    WHERE orders.user_id = ?
+    ORDER BY orders.created_at DESC
+  `;
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error(err);
+
+      return res.status(500).json({
+        message: "Failed to fetch orders"
+      });
+    }
+
+    res.json(results);
+  });
+});
+
 app.listen(5001, () => {
   console.log("Mealix server running on http://localhost:5001");
 });
