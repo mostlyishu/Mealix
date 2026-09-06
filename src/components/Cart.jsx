@@ -7,7 +7,8 @@ function Cart() {
     cart,
     removeFromCart,
     increaseQuantity,
-    decreaseQuantity
+    decreaseQuantity,
+    clearCart
   } = useCart();
 
   const { isLoggedIn } = useAuth();
@@ -66,6 +67,7 @@ function Cart() {
       setMessage(
         `Order placed successfully! Order ID: ${data.orderId}`
       );
+      clearCart();
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -73,50 +75,50 @@ function Cart() {
     }
   }
 
-  return (
-    <section>
-      <h2>Your Cart</h2>
+    return (
+        <section>
+            <h2>Your Cart</h2>
 
-      {cart.length === 0 ? (
-        <p>Your cart is empty.</p>
-      ) : (
-        <>
-          {cart.map((food) => (
-            <div key={food.id}>
-              <h3>{food.name}</h3>
+            {cart.length === 0 ? (
+                <p>Your cart is empty.</p>
+            ) : (
+                <>
+                    {cart.map((food) => (
+                        <div key={food.id}>
+                            <h3>{food.name}</h3>
 
-              <p>₹{food.price}</p>
+                            <p>₹{food.price}</p>
 
-              <button onClick={() => decreaseQuantity(food.id)}>
-                −
-              </button>
+                            <button onClick={() => decreaseQuantity(food.id)}>
+                                −
+                            </button>
 
-              <span> {food.quantity} </span>
+                            <span> {food.quantity} </span>
 
-              <button onClick={() => increaseQuantity(food.id)}>
-                +
-              </button>
+                            <button onClick={() => increaseQuantity(food.id)}>
+                                +
+                            </button>
 
-              <button onClick={() => removeFromCart(food.id)}>
-                Remove
-              </button>
-            </div>
-          ))}
+                            <button onClick={() => removeFromCart(food.id)}>
+                                Remove
+                            </button>
+                        </div>
+                    ))}
 
-          <h3>Total: ₹{total}</h3>
+                    <h3>Total: ₹{total}</h3>
 
-          <button
-            onClick={handlePlaceOrder}
-            disabled={placingOrder}
-          >
-            {placingOrder ? "Placing Order..." : "Place Order"}
-          </button>
+                    <button
+                        onClick={handlePlaceOrder}
+                        disabled={placingOrder}
+                    >
+                        {placingOrder ? "Placing Order..." : "Place Order"}
+                    </button>
+                </>
+            )}
 
-          {message && <p>{message}</p>}
-        </>
-      )}
-    </section>
-  );
+            {message && <p>{message}</p>}
+        </section>
+    );
 }
 
 export default Cart;

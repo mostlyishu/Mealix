@@ -46,6 +46,9 @@ export function CartProvider({ children }) {
         .filter((item) => item.quantity > 0)
     );
   }
+    function clearCart() {
+        setCart([]);
+    }
 
   return (
     <CartContext.Provider
@@ -54,7 +57,8 @@ export function CartProvider({ children }) {
         addToCart,
         removeFromCart,
         increaseQuantity,
-        decreaseQuantity
+        decreaseQuantity,
+        clearCart
       }}
     >
       {children}
