@@ -30,6 +30,29 @@ function Orders() {
       });
   }, []);
 
+  // Group all rows belonging to the same order
+  const groupedOrders = orders.reduce((groups, item) => {
+    if (!groups[item.order_id]) {
+      groups[item.order_id] = {
+        order_id: item.order_id,
+        total_amount: item.total_amount,
+        status: item.status,
+        created_at: item.created_at,
+        items: []
+      };
+    }
+
+    groups[item.order_id].items.push({
+      food_name: item.food_name,
+      price: item.price,
+      quantity: item.quantity
+    });
+
+    return groups;
+  }, {});
+
+  const orderList = Object.values(groupedOrders);
+
   return (
     <main>
       <h1>My Orders</h1>
@@ -38,27 +61,28 @@ function Orders() {
 
       {error && <p>{error}</p>}
 
-      {!loading && !error && orders.length === 0 && (
+      {!loading && !error && orderList.length === 0 && (
         <p>You haven't placed any orders yet.</p>
       )}
 
-      {orders.map((order) => (
-        <div key={`${order.order_id}-${order.food_name}`}>
-          <h3>Order #{order.order_id}</h3>
+      {orderList.map((order) => (
+        <div key={order.order_id}>
+          <h2>Order #{order.order_id}</h2>
+
+          {order.items.map((item, index) => (
+            <p key={index}>
+              {item.food_name} × {item.quantity}
+            </p>
+          ))}
 
           <p>
-            {order.food_name} × {order.quantity}
+            <strong>Total: ₹{order.total_amount}</strong>
           </p>
-
-          <p>Price: ₹{order.price}</p>
-
-          <p>Total: ₹{order.total_amount}</p>
 
           <p>Status: {order.status}</p>
 
           <p>
-            Date:{" "}
-            {new Date(order.created_at).toLocaleString()}
+            Date: {new Date(order.created_at).toLocaleString()}
           </p>
 
           <hr />
