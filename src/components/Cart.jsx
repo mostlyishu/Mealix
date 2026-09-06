@@ -22,6 +22,14 @@ function Cart() {
   );
 
   async function handlePlaceOrder() {
+      const confirmOrder = window.confirm(
+          `Place this order for ₹${total}?`
+      );
+
+      if (!confirmOrder) {
+          return;
+      }
+
     if (!isLoggedIn) {
       setMessage("Please login before placing an order.");
       return;
@@ -111,7 +119,7 @@ function Cart() {
                         onClick={handlePlaceOrder}
                         disabled={placingOrder}
                     >
-                        {placingOrder ? "Placing Order..." : "Place Order"}
+                        {placingOrder ? "Placing Order..." : "Confirm & Place Order"}
                     </button>
                 </>
             )}
