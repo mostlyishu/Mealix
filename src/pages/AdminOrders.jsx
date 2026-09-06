@@ -6,23 +6,62 @@ function AdminOrders() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5001/api/admin/orders")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch admin orders");
-        }
-
-        return response.json();
-      })
-      .then((data) => {
-        setOrders(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        setError(error.message);
-        setLoading(false);
-      });
+    fetchOrders();
   }, []);
+
+  async function fetchOrders() {
+    try {
+      const response = await fetch(
+        "http://localhost:5001/api/admin/orders"
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch admin orders");
+      }
+
+      const data = await response.json();
+
+      setOrders(data);
+      setLoading(false);
+    } catch (error) {
+      setError(error.message);
+      setLoading(false);
+    }
+  }
+
+  async function updateStatus(orderId, newStatus) {
+    try {
+      const response = await fetch(
+        `http://localhost:5001/api/admin/orders/${orderId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            status: newStatus
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message);
+      }
+
+      // Update status locally without refreshing the page
+      setOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.order_id === orderId
+            ? { ...order, status: newStatus }
+            : order
+        )
+      );
+    } catch (error) {
+      setError(error.message);
+    }
+  }
 
   // Group items belonging to the same order
   const groupedOrders = orders.reduce((groups, item) => {
@@ -87,6 +126,21 @@ function AdminOrders() {
           <p>
             <strong>Status:</strong> {order.status}
           </p>
+
+          <select
+            value={order.status}
+            onChange={(event) =>
+              updateStatus(
+                order.order_id,
+                event.target.value
+              )
+            }
+          >
+            <option value="Pending">Pending</option>
+            <option value="Preparing">Preparing</option>
+            <option value="Ready">Ready</option>
+            <option value="Completed">Completed</option>
+          </select>
 
           <p>
             <strong>Placed:</strong>{" "}

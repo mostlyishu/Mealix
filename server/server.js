@@ -315,6 +315,50 @@ app.get("/api/admin/orders", (req, res) => {
   });
 });
 
+app.patch("/api/admin/orders/:id/status", (req, res) => {
+  const orderId = req.params.id;
+  const { status } = req.body;
+
+  const allowedStatuses = [
+    "Pending",
+    "Preparing",
+    "Ready",
+    "Completed"
+  ];
+
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({
+      message: "Invalid order status"
+    });
+  }
+
+  const sql = `
+    UPDATE orders
+    SET status = ?
+    WHERE id = ?
+  `;
+
+  db.query(sql, [status, orderId], (err, result) => {
+    if (err) {
+      console.error(err);
+
+      return res.status(500).json({
+        message: "Failed to update order status"
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "Order not found"
+      });
+    }
+
+    res.json({
+      message: "Order status updated successfully"
+    });
+  });
+});
+
 app.listen(5001, () => {
   console.log("Mealix server running on http://localhost:5001");
 });
