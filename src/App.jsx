@@ -10,6 +10,7 @@ import Register from "./pages/Register";
 import CartPage from "./pages/CartPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import OrderSuccess from "./pages/OrderSuccess";
+import AdminOrders from "./pages/AdminOrders";
 
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -38,6 +39,10 @@ function App() {
             <Route
               path="/order-success"
               element={<OrderSuccess />}
+            />
+            <Route
+              path="/admin/orders"
+              element={<AdminOrders />}
             />
           </Routes>
         </BrowserRouter>

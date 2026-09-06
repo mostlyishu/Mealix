@@ -280,6 +280,41 @@ app.get("/api/orders", authMiddleware, (req, res) => {
   });
 });
 
+app.get("/api/admin/orders", (req, res) => {
+  const sql = `
+    SELECT
+      orders.id AS order_id,
+      users.name AS customer_name,
+      users.email AS customer_email,
+      orders.total_amount,
+      orders.status,
+      orders.created_at,
+      foods.name AS food_name,
+      foods.price,
+      order_items.quantity
+    FROM orders
+    JOIN users
+      ON orders.user_id = users.id
+    JOIN order_items
+      ON orders.id = order_items.order_id
+    JOIN foods
+      ON order_items.food_id = foods.id
+    ORDER BY orders.created_at DESC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error(err);
+
+      return res.status(500).json({
+        message: "Failed to fetch admin orders"
+      });
+    }
+
+    res.json(results);
+  });
+});
+
 app.listen(5001, () => {
   console.log("Mealix server running on http://localhost:5001");
 });
