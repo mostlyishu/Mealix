@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import CartPage from "./pages/CartPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 import OrderSuccess from "./pages/OrderSuccess";
 import AdminOrders from "./pages/AdminOrders";
 
@@ -42,7 +43,11 @@ function App() {
             />
             <Route
               path="/admin/orders"
-              element={<AdminOrders />}
+              element={
+                <AdminRoute>
+                  <AdminOrders />
+                </AdminRoute>
+              }
             />
           </Routes>
         </BrowserRouter>

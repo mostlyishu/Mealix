@@ -6,6 +6,7 @@ const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const authMiddleware = require("./middleware/authMiddleware");
+const adminMiddleware = require("./middleware/adminMiddleware");
 
 const app = express();
 const db = mysql.createConnection({
@@ -150,7 +151,8 @@ app.post("/api/login", (req, res) => {
       const token = jwt.sign(
           {
               id: user.id,
-              email: user.email
+              email: user.email,
+              role: user.role
           },
           process.env.JWT_SECRET,
           {
@@ -164,7 +166,8 @@ app.post("/api/login", (req, res) => {
           user: {
               id: user.id,
               name: user.name,
-              email: user.email
+              email: user.email,
+              role: user.role
           }
       });
   });
@@ -280,7 +283,11 @@ app.get("/api/orders", authMiddleware, (req, res) => {
   });
 });
 
-app.get("/api/admin/orders", (req, res) => {
+app.get(
+    "/api/admin/orders",
+    authMiddleware,
+    adminMiddleware,
+    (req, res) => {
   const sql = `
     SELECT
       orders.id AS order_id,
@@ -315,7 +322,11 @@ app.get("/api/admin/orders", (req, res) => {
   });
 });
 
-app.patch("/api/admin/orders/:id/status", (req, res) => {
+app.patch(
+  "/api/admin/orders/:id/status",
+  authMiddleware,
+  adminMiddleware,
+  (req, res) => {
   const orderId = req.params.id;
   const { status } = req.body;
 

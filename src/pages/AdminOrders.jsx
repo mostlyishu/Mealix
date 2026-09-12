@@ -11,12 +11,19 @@ function AdminOrders() {
 
   async function fetchOrders() {
     try {
-      const response = await fetch(
-        "http://localhost:5001/api/admin/orders"
-      );
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(
+            "http://localhost:5001/api/admin/orders",
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch admin orders");
+        throw new Error("Access denied. Admins only.");
       }
 
       const data = await response.json();
@@ -31,13 +38,16 @@ function AdminOrders() {
 
   async function updateStatus(orderId, newStatus) {
     try {
-      const response = await fetch(
-        `http://localhost:5001/api/admin/orders/${orderId}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json"
-          },
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(
+            `http://localhost:5001/api/admin/orders/${orderId}/status`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
           body: JSON.stringify({
             status: newStatus
           })
