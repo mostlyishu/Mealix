@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import OrderSuccess from "./pages/OrderSuccess";
 import AdminOrders from "./pages/AdminOrders";
+import AdminFoods from "./pages/AdminFoods";
 
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -46,6 +47,14 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminOrders />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/foods"
+              element={
+                <AdminRoute>
+                  <AdminFoods />
                 </AdminRoute>
               }
             />

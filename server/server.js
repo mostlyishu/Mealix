@@ -9,12 +9,14 @@ const authMiddleware = require("./middleware/authMiddleware");
 const adminMiddleware = require("./middleware/adminMiddleware");
 
 const app = express();
+
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
   password: "",
   database: "mealix"
 });
+
 db.connect((err) => {
   if (err) {
     console.error("Database connection failed:", err);
@@ -28,12 +30,17 @@ app.use(cors());
 app.use(express.json());
 
 
+// =========================
+// FOOD MENU
+// =========================
+
 app.get("/api/foods", (req, res) => {
   const sql = "SELECT * FROM foods";
 
   db.query(sql, (err, results) => {
     if (err) {
       console.error(err);
+
       return res.status(500).json({
         message: "Database error"
       });
@@ -43,14 +50,23 @@ app.get("/api/foods", (req, res) => {
   });
 });
 
+
+// =========================
+// ROOT
+// =========================
+
 app.get("/", (req, res) => {
   res.send("Mealix API is running!");
 });
 
+
+// =========================
+// REGISTER
+// =========================
+
 app.post("/api/register", async (req, res) => {
   const { name, email, password } = req.body;
 
-  // Basic validation
   if (!name || !email || !password) {
     return res.status(400).json({
       message: "All fields are required"
@@ -58,12 +74,12 @@ app.post("/api/register", async (req, res) => {
   }
 
   try {
-    // Check if user already exists
     const checkSql = "SELECT * FROM users WHERE email = ?";
 
     db.query(checkSql, [email], async (err, results) => {
       if (err) {
         console.error(err);
+
         return res.status(500).json({
           message: "Database error"
         });
@@ -75,10 +91,8 @@ app.post("/api/register", async (req, res) => {
         });
       }
 
-      // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Insert user
       const insertSql =
         "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
 
@@ -88,6 +102,7 @@ app.post("/api/register", async (req, res) => {
         (err, result) => {
           if (err) {
             console.error(err);
+
             return res.status(500).json({
               message: "Failed to register user"
             });
@@ -108,6 +123,11 @@ app.post("/api/register", async (req, res) => {
     });
   }
 });
+
+
+// =========================
+// LOGIN
+// =========================
 
 app.post("/api/login", (req, res) => {
   const { email, password } = req.body;
@@ -148,36 +168,47 @@ app.post("/api/login", (req, res) => {
       });
     }
 
-      const token = jwt.sign(
-          {
-              id: user.id,
-              email: user.email,
-              role: user.role
-          },
-          process.env.JWT_SECRET,
-          {
-              expiresIn: "1d"
-          }
-      );
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1d"
+      }
+    );
 
-      res.json({
-          message: "Login successful",
-          token,
-          user: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: user.role
-          }
-      });
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
   });
 });
+
+
+// =========================
+// PROFILE
+// =========================
+
 app.get("/api/profile", authMiddleware, (req, res) => {
   res.json({
     message: "You are authenticated!",
     user: req.user
   });
 });
+
+
+// =========================
+// CREATE ORDER
+// =========================
 
 app.post("/api/orders", authMiddleware, (req, res) => {
   const { items, total_amount } = req.body;
@@ -249,6 +280,11 @@ app.post("/api/orders", authMiddleware, (req, res) => {
   );
 });
 
+
+// =========================
+// STUDENT ORDERS
+// =========================
+
 app.get("/api/orders", authMiddleware, (req, res) => {
   const userId = req.user.id;
 
@@ -283,50 +319,63 @@ app.get("/api/orders", authMiddleware, (req, res) => {
   });
 });
 
+
+// =========================
+// ADMIN ORDERS
+// =========================
+
 app.get(
-    "/api/admin/orders",
-    authMiddleware,
-    adminMiddleware,
-    (req, res) => {
-  const sql = `
-    SELECT
-      orders.id AS order_id,
-      users.name AS customer_name,
-      users.email AS customer_email,
-      orders.total_amount,
-      orders.status,
-      orders.created_at,
-      foods.name AS food_name,
-      foods.price,
-      order_items.quantity
-    FROM orders
-    JOIN users
-      ON orders.user_id = users.id
-    JOIN order_items
-      ON orders.id = order_items.order_id
-    JOIN foods
-      ON order_items.food_id = foods.id
-    ORDER BY orders.created_at DESC
-  `;
+  "/api/admin/orders",
+  authMiddleware,
+  adminMiddleware,
+  (req, res) => {
 
-  db.query(sql, (err, results) => {
-    if (err) {
-      console.error(err);
+    const sql = `
+      SELECT
+        orders.id AS order_id,
+        users.name AS customer_name,
+        users.email AS customer_email,
+        orders.total_amount,
+        orders.status,
+        orders.created_at,
+        foods.name AS food_name,
+        foods.price,
+        order_items.quantity
+      FROM orders
+      JOIN users
+        ON orders.user_id = users.id
+      JOIN order_items
+        ON orders.id = order_items.order_id
+      JOIN foods
+        ON order_items.food_id = foods.id
+      ORDER BY orders.created_at DESC
+    `;
 
-      return res.status(500).json({
-        message: "Failed to fetch admin orders"
-      });
-    }
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.error(err);
 
-    res.json(results);
-  });
-});
+        return res.status(500).json({
+          message: "Failed to fetch admin orders"
+        });
+      }
+
+      res.json(results);
+    });
+  }
+);
+
+
+// =========================
+// ADMIN STATS
+// =========================
 
 app.get(
   "/api/admin/stats",
   authMiddleware,
   adminMiddleware,
   (req, res) => {
+
     const sql = `
       SELECT
         COUNT(DISTINCT orders.id) AS total_orders,
@@ -378,54 +427,217 @@ app.get(
   }
 );
 
+
+// =========================
+// ADMIN ADD FOOD
+// =========================
+
+app.post(
+  "/api/admin/foods",
+  authMiddleware,
+  adminMiddleware,
+  (req, res) => {
+
+    const { name, price, category } = req.body;
+
+    if (!name || !price || !category) {
+      return res.status(400).json({
+        message: "Name, price and category are required"
+      });
+    }
+
+    const sql = `
+      INSERT INTO foods (name, price, category)
+      VALUES (?, ?, ?)
+    `;
+
+    db.query(
+      sql,
+      [name, price, category],
+      (err, result) => {
+
+        if (err) {
+          console.error(err);
+
+          return res.status(500).json({
+            message: "Failed to add food"
+          });
+        }
+
+        res.status(201).json({
+          message: "Food added successfully",
+          foodId: result.insertId
+        });
+      }
+    );
+  }
+);
+
+
+// =========================
+// ADMIN EDIT FOOD
+// =========================
+
+app.put(
+  "/api/admin/foods/:id",
+  authMiddleware,
+  adminMiddleware,
+  (req, res) => {
+
+    const foodId = req.params.id;
+    const { name, price, category } = req.body;
+
+    if (!name || !price || !category) {
+      return res.status(400).json({
+        message: "Name, price and category are required"
+      });
+    }
+
+    const sql = `
+      UPDATE foods
+      SET name = ?, price = ?, category = ?
+      WHERE id = ?
+    `;
+
+    db.query(
+      sql,
+      [name, price, category, foodId],
+      (err, result) => {
+
+        if (err) {
+          console.error(err);
+
+          return res.status(500).json({
+            message: "Failed to update food"
+          });
+        }
+
+        if (result.affectedRows === 0) {
+          return res.status(404).json({
+            message: "Food not found"
+          });
+        }
+
+        res.json({
+          message: "Food updated successfully"
+        });
+      }
+    );
+  }
+);
+
+
+// =========================
+// ADMIN DELETE FOOD
+// =========================
+
+app.delete(
+  "/api/admin/foods/:id",
+  authMiddleware,
+  adminMiddleware,
+  (req, res) => {
+
+    const foodId = req.params.id;
+
+    const sql = `
+      DELETE FROM foods
+      WHERE id = ?
+    `;
+
+    db.query(
+      sql,
+      [foodId],
+      (err, result) => {
+
+        if (err) {
+          console.error(err);
+
+          return res.status(500).json({
+            message: "Failed to delete food"
+          });
+        }
+
+        if (result.affectedRows === 0) {
+          return res.status(404).json({
+            message: "Food not found"
+          });
+        }
+
+        res.json({
+          message: "Food deleted successfully"
+        });
+      }
+    );
+  }
+);
+
+
+// =========================
+// ADMIN UPDATE ORDER STATUS
+// =========================
+
 app.patch(
   "/api/admin/orders/:id/status",
   authMiddleware,
   adminMiddleware,
   (req, res) => {
-  const orderId = req.params.id;
-  const { status } = req.body;
 
-  const allowedStatuses = [
-    "Pending",
-    "Preparing",
-    "Ready",
-    "Completed"
-  ];
+    const orderId = req.params.id;
+    const { status } = req.body;
 
-  if (!allowedStatuses.includes(status)) {
-    return res.status(400).json({
-      message: "Invalid order status"
-    });
+    const allowedStatuses = [
+      "Pending",
+      "Preparing",
+      "Ready",
+      "Completed"
+    ];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid order status"
+      });
+    }
+
+    const sql = `
+      UPDATE orders
+      SET status = ?
+      WHERE id = ?
+    `;
+
+    db.query(
+      sql,
+      [status, orderId],
+      (err, result) => {
+
+        if (err) {
+          console.error(err);
+
+          return res.status(500).json({
+            message: "Failed to update order status"
+          });
+        }
+
+        if (result.affectedRows === 0) {
+          return res.status(404).json({
+            message: "Order not found"
+          });
+        }
+
+        res.json({
+          message: "Order status updated successfully"
+        });
+      }
+    );
   }
+);
 
-  const sql = `
-    UPDATE orders
-    SET status = ?
-    WHERE id = ?
-  `;
 
-  db.query(sql, [status, orderId], (err, result) => {
-    if (err) {
-      console.error(err);
-
-      return res.status(500).json({
-        message: "Failed to update order status"
-      });
-    }
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        message: "Order not found"
-      });
-    }
-
-    res.json({
-      message: "Order status updated successfully"
-    });
-  });
-});
+// =========================
+// START SERVER
+// =========================
 
 app.listen(5001, () => {
-  console.log("Mealix server running on http://localhost:5001");
+  console.log(
+    "Mealix server running on http://localhost:5001"
+  );
 });
