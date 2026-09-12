@@ -322,6 +322,62 @@ app.get(
   });
 });
 
+app.get(
+  "/api/admin/stats",
+  authMiddleware,
+  adminMiddleware,
+  (req, res) => {
+    const sql = `
+      SELECT
+        COUNT(DISTINCT orders.id) AS total_orders,
+
+        COUNT(
+          DISTINCT CASE
+            WHEN orders.status = 'Pending'
+            THEN orders.id
+          END
+        ) AS pending_orders,
+
+        COUNT(
+          DISTINCT CASE
+            WHEN orders.status = 'Preparing'
+            THEN orders.id
+          END
+        ) AS preparing_orders,
+
+        COUNT(
+          DISTINCT CASE
+            WHEN orders.status = 'Ready'
+            THEN orders.id
+          END
+        ) AS ready_orders,
+
+        COUNT(
+          DISTINCT CASE
+            WHEN orders.status = 'Completed'
+            THEN orders.id
+          END
+        ) AS completed_orders,
+
+        COALESCE(SUM(orders.total_amount), 0) AS total_revenue
+
+      FROM orders
+    `;
+
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.error(err);
+
+        return res.status(500).json({
+          message: "Failed to fetch admin stats"
+        });
+      }
+
+      res.json(results[0]);
+    });
+  }
+);
+
 app.patch(
   "/api/admin/orders/:id/status",
   authMiddleware,

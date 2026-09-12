@@ -4,10 +4,37 @@ function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     fetchOrders();
+    fetchStats();
   }, []);
+
+  async function fetchStats() {
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      "http://localhost:5001/api/admin/stats",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch admin stats");
+    }
+
+    const data = await response.json();
+
+    setStats(data);
+  } catch (error) {
+    setError(error.message);
+  }
+}
 
   async function fetchOrders() {
     try {
@@ -99,7 +126,43 @@ function AdminOrders() {
 
   return (
     <main>
-      <h1>Canteen Dashboard</h1>
+      <h1>Canteen Dashboard</h1>{stats && (
+  <section>
+    <h2>Dashboard Overview</h2>
+
+    <div>
+      <div>
+        <h3>Total Orders</h3>
+        <p>{stats.total_orders}</p>
+      </div>
+
+      <div>
+        <h3>Pending</h3>
+        <p>{stats.pending_orders}</p>
+      </div>
+
+      <div>
+        <h3>Preparing</h3>
+        <p>{stats.preparing_orders}</p>
+      </div>
+
+      <div>
+        <h3>Ready</h3>
+        <p>{stats.ready_orders}</p>
+      </div>
+
+      <div>
+        <h3>Completed</h3>
+        <p>{stats.completed_orders}</p>
+      </div>
+
+      <div>
+        <h3>Total Revenue</h3>
+        <p>₹{stats.total_revenue}</p>
+      </div>
+    </div>
+  </section>
+)}
 
       {loading && <p>Loading orders...</p>}
 
