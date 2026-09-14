@@ -6,6 +6,7 @@ function AdminFoods() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
+  const [available, setAvailable] = useState(true);
 
   const [editingId, setEditingId] = useState(null);
 
@@ -35,11 +36,12 @@ function AdminFoods() {
   }
 
   function resetForm() {
-    setName("");
-    setPrice("");
-    setCategory("");
-    setEditingId(null);
-  }
+  setName("");
+  setPrice("");
+  setCategory("");
+  setAvailable(true);
+  setEditingId(null);
+}
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -65,7 +67,8 @@ function AdminFoods() {
         body: JSON.stringify({
           name,
           price,
-          category
+          category,
+          available
         })
       });
 
@@ -89,14 +92,15 @@ function AdminFoods() {
   }
 
   function startEditing(food) {
-    setEditingId(food.id);
-    setName(food.name);
-    setPrice(food.price);
-    setCategory(food.category);
+  setEditingId(food.id);
+  setName(food.name);
+  setPrice(food.price);
+  setCategory(food.category);
+  setAvailable(Number(food.available) === 1);
 
-    setMessage("");
-    setError("");
-  }
+  setMessage("");
+  setError("");
+}
 
   async function deleteFood(id) {
     const confirmDelete = window.confirm(
@@ -169,6 +173,17 @@ function AdminFoods() {
             setCategory(event.target.value)
           }
         />
+        <label>
+  <input
+    type="checkbox"
+    checked={available}
+    onChange={(event) =>
+      setAvailable(event.target.checked)
+    }
+  />
+
+  Available
+</label>
 
         <button type="submit">
           {editingId ? "Update Food" : "Add Food"}
@@ -199,6 +214,10 @@ function AdminFoods() {
           <p>₹{food.price}</p>
 
           <p>{food.category}</p>
+
+              <p>
+                  Status: {food.available ? "Available" : "Unavailable"}
+              </p>
 
           <button
             onClick={() => startEditing(food)}

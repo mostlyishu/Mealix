@@ -438,7 +438,7 @@ app.post(
   adminMiddleware,
   (req, res) => {
 
-    const { name, price, category } = req.body;
+    const { name, price, category, available } = req.body;
 
     if (!name || !price || !category) {
       return res.status(400).json({
@@ -446,15 +446,15 @@ app.post(
       });
     }
 
-    const sql = `
-      INSERT INTO foods (name, price, category)
-      VALUES (?, ?, ?)
-    `;
+      const sql = `
+  INSERT INTO foods (name, price, category, available)
+  VALUES (?, ?, ?, ?)
+`;
 
-    db.query(
-      sql,
-      [name, price, category],
-      (err, result) => {
+      db.query(
+          sql,
+          [name, price, category, available ?? true],
+          (err, result) => {
 
         if (err) {
           console.error(err);
@@ -483,9 +483,8 @@ app.put(
   authMiddleware,
   adminMiddleware,
   (req, res) => {
-
     const foodId = req.params.id;
-    const { name, price, category } = req.body;
+    const { name, price, category, available } = req.body;
 
     if (!name || !price || !category) {
       return res.status(400).json({
@@ -495,18 +494,16 @@ app.put(
 
     const sql = `
       UPDATE foods
-      SET name = ?, price = ?, category = ?
+      SET name = ?, price = ?, category = ?, available = ?
       WHERE id = ?
     `;
 
     db.query(
       sql,
-      [name, price, category, foodId],
+      [name, price, category, available, foodId],
       (err, result) => {
-
         if (err) {
           console.error(err);
-
           return res.status(500).json({
             message: "Failed to update food"
           });
