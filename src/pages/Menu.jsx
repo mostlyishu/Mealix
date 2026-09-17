@@ -46,6 +46,7 @@ function Menu() {
               name={food.name}
               price={food.price}
               category={food.category}
+              available={food.available}
               onAdd={() => addToCart(food)}
             />
           ))}

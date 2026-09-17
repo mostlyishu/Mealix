@@ -227,53 +227,102 @@ app.post("/api/orders", authMiddleware, (req, res) => {
 
   const userId = req.user.id;
 
-  const orderSql = `
-    INSERT INTO orders (user_id, total_amount)
-    VALUES (?, ?)
+  // Get unique food IDs from the cart
+  const foodIds = [
+    ...new Set(items.map((item) => item.food_id))
+  ];
+
+  // Check the current availability directly from MySQL
+  const foodCheckSql = `
+    SELECT id, name, available
+    FROM foods
+    WHERE id IN (?)
   `;
 
   db.query(
-    orderSql,
-    [userId, total_amount],
-    (err, orderResult) => {
+    foodCheckSql,
+    [foodIds],
+    (err, foods) => {
       if (err) {
         console.error(err);
 
         return res.status(500).json({
-          message: "Failed to create order"
+          message: "Failed to check food availability"
         });
       }
 
-      const orderId = orderResult.insertId;
+      // Make sure every requested food actually exists
+      if (foods.length !== foodIds.length) {
+        return res.status(400).json({
+          message: "One or more food items do not exist"
+        });
+      }
 
-      const itemValues = items.map((item) => [
-        orderId,
-        item.food_id,
-        item.quantity
-      ]);
+      // Find foods that the admin has marked unavailable
+      const unavailableFoods = foods.filter(
+        (food) => Number(food.available) !== 1
+      );
 
-      const itemSql = `
-        INSERT INTO order_items
-        (order_id, food_id, quantity)
-        VALUES ?
+      if (unavailableFoods.length > 0) {
+        const names = unavailableFoods
+          .map((food) => food.name)
+          .join(", ");
+
+        return res.status(409).json({
+          message: `${names} is currently unavailable`
+        });
+      }
+
+      // All foods are available, so create the order
+      const orderSql = `
+        INSERT INTO orders (user_id, total_amount)
+        VALUES (?, ?)
       `;
 
       db.query(
-        itemSql,
-        [itemValues],
-        (err) => {
+        orderSql,
+        [userId, total_amount],
+        (err, orderResult) => {
           if (err) {
             console.error(err);
 
             return res.status(500).json({
-              message: "Failed to save order items"
+              message: "Failed to create order"
             });
           }
 
-          res.status(201).json({
-            message: "Order placed successfully",
-            orderId
-          });
+          const orderId = orderResult.insertId;
+
+          const itemValues = items.map((item) => [
+            orderId,
+            item.food_id,
+            item.quantity
+          ]);
+
+          const itemSql = `
+            INSERT INTO order_items
+            (order_id, food_id, quantity)
+            VALUES ?
+          `;
+
+          db.query(
+            itemSql,
+            [itemValues],
+            (err) => {
+              if (err) {
+                console.error(err);
+
+                return res.status(500).json({
+                  message: "Failed to save order items"
+                });
+              }
+
+              res.status(201).json({
+                message: "Order placed successfully",
+                orderId
+              });
+            }
+          );
         }
       );
     }

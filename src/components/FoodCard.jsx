@@ -1,4 +1,4 @@
-function FoodCard({ name, price, category, onAdd }) {
+function FoodCard({ name, price, category, available, onAdd }) {
   return (
     <div className="food-card">
       <div className="food-image">
@@ -12,8 +12,11 @@ function FoodCard({ name, price, category, onAdd }) {
       <div className="food-bottom">
         <strong>₹{price}</strong>
 
-        <button onClick={onAdd}>
-          Add
+        <button
+          onClick={onAdd}
+          disabled={!available}
+        >
+          {available ? "Add" : "Unavailable"}
         </button>
       </div>
     </div>
