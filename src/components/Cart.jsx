@@ -62,8 +62,7 @@ function Cart() {
             Authorization: `Bearer ${token}`
           },
           body: JSON.stringify({
-            items: orderItems,
-            total_amount: total
+            items: orderItems
           })
         }
       );

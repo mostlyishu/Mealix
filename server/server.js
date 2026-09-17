@@ -211,21 +211,28 @@ app.get("/api/profile", authMiddleware, (req, res) => {
 // =========================
 
 app.post("/api/orders", authMiddleware, (req, res) => {
-  const { items, total_amount } = req.body;
+  const { items } = req.body;
 
-  if (!items || items.length === 0) {
-    return res.status(400).json({
-      message: "Cart is empty"
-    });
-  }
+if (!items || items.length === 0) {
+  return res.status(400).json({
+    message: "Cart is empty"
+  });
+}
 
-  if (!total_amount || total_amount <= 0) {
-    return res.status(400).json({
-      message: "Invalid order total"
-    });
-  }
+const invalidItem = items.some(
+  (item) =>
+    !Number.isInteger(Number(item.food_id)) ||
+    !Number.isInteger(Number(item.quantity)) ||
+    Number(item.quantity) <= 0
+);
 
-  const userId = req.user.id;
+if (invalidItem) {
+  return res.status(400).json({
+    message: "Invalid cart items"
+  });
+}
+
+const userId = req.user.id;
 
   // Get unique food IDs from the cart
   const foodIds = [
@@ -234,7 +241,7 @@ app.post("/api/orders", authMiddleware, (req, res) => {
 
   // Check the current availability directly from MySQL
   const foodCheckSql = `
-    SELECT id, name, available
+    SELECT id, name, price, available
     FROM foods
     WHERE id IN (?)
   `;
@@ -273,6 +280,20 @@ app.post("/api/orders", authMiddleware, (req, res) => {
         });
       }
 
+        const calculatedTotal = items.reduce(
+            (total, item) => {
+                const food = foods.find(
+                    (food) => food.id === item.food_id
+                );
+
+                return (
+                    total +
+                    Number(food.price) * Number(item.quantity)
+                );
+            },
+            0
+        );
+
       // All foods are available, so create the order
       const orderSql = `
         INSERT INTO orders (user_id, total_amount)
@@ -281,7 +302,7 @@ app.post("/api/orders", authMiddleware, (req, res) => {
 
       db.query(
         orderSql,
-        [userId, total_amount],
+        [userId, calculatedTotal],
         (err, orderResult) => {
           if (err) {
             console.error(err);
