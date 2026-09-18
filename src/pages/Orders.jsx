@@ -6,88 +6,242 @@ function Orders() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    fetch("http://localhost:5001/api/orders", {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch orders");
-        }
-
-        return response.json();
-      })
-      .then((data) => {
-        setOrders(data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        setError(error.message);
-        setLoading(false);
-      });
+    fetchOrders();
   }, []);
 
-  // Group all rows belonging to the same order
-  const groupedOrders = orders.reduce((groups, item) => {
-    if (!groups[item.order_id]) {
-      groups[item.order_id] = {
-        order_id: item.order_id,
-        total_amount: item.total_amount,
-        status: item.status,
-        created_at: item.created_at,
-        items: []
-      };
+  async function fetchOrders() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(
+        "http://localhost:5001/api/orders",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch orders");
+      }
+
+      const data = await response.json();
+
+      setOrders(data);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    groups[item.order_id].items.push({
-      food_name: item.food_name,
-      price: item.price,
-      quantity: item.quantity
-    });
+  // =========================
+  // GROUP ORDER ITEMS
+  // =========================
 
-    return groups;
-  }, {});
+  const groupedOrders = orders.reduce(
+    (groups, item) => {
+      if (!groups[item.order_id]) {
+        groups[item.order_id] = {
+          order_id: item.order_id,
+          total_amount: item.total_amount,
+          status: item.status,
+          created_at: item.created_at,
+          items: []
+        };
+      }
+
+      groups[item.order_id].items.push({
+        food_name: item.food_name,
+        price: item.price,
+        quantity: item.quantity
+      });
+
+      return groups;
+    },
+    {}
+  );
 
   const orderList = Object.values(groupedOrders);
 
+  // =========================
+  // ORDER STATUS STEPS
+  // =========================
+
+  const statusSteps = [
+    "Pending",
+    "Preparing",
+    "Ready",
+    "Completed"
+  ];
+
+  function getStatusIndex(status) {
+    return statusSteps.indexOf(status);
+  }
+
   return (
-    <main>
-      <h1>My Orders</h1>
+    <main className="orders-page">
+      <div className="orders-header">
+        <div>
+          <h1>My Orders</h1>
+
+          <p>
+            Track your Mealix orders and their current
+            status.
+          </p>
+        </div>
+
+        <button
+          className="orders-refresh-button"
+          onClick={fetchOrders}
+          disabled={loading}
+        >
+          {loading ? "Refreshing..." : "Refresh"}
+        </button>
+      </div>
 
       {loading && <p>Loading orders...</p>}
 
-      {error && <p>{error}</p>}
-
-      {!loading && !error && orderList.length === 0 && (
-        <p>You haven't placed any orders yet.</p>
+      {error && (
+        <p className="orders-error">
+          {error}
+        </p>
       )}
 
-      {orderList.map((order) => (
-        <div key={order.order_id}>
-          <h2>Order #{order.order_id}</h2>
+      {!loading &&
+        !error &&
+        orderList.length === 0 && (
+          <div className="no-orders">
+            <h2>No orders yet</h2>
 
-          {order.items.map((item, index) => (
-            <p key={index}>
-              {item.food_name} × {item.quantity}
+            <p>
+              Your Mealix orders will appear here after
+              checkout.
             </p>
-          ))}
+          </div>
+        )}
 
-          <p>
-            <strong>Total: ₹{order.total_amount}</strong>
-          </p>
+      <div className="student-orders-list">
+        {orderList.map((order) => {
+          const currentStatusIndex =
+            getStatusIndex(order.status);
 
-          <p>Status: {order.status}</p>
+          return (
+            <article
+              className="student-order-card"
+              key={order.order_id}
+            >
+              <div className="student-order-header">
+                <div>
+                  <h2>
+                    Order #{order.order_id}
+                  </h2>
 
-          <p>
-            Date: {new Date(order.created_at).toLocaleString()}
-          </p>
+                  <p>
+                    {new Date(
+                      order.created_at
+                    ).toLocaleString()}
+                  </p>
+                </div>
 
-          <hr />
-        </div>
-      ))}
+                <span
+                  className={`order-status ${order.status.toLowerCase()}`}
+                >
+                  {order.status}
+                </span>
+              </div>
+
+              {/* Order tracking */}
+
+              <div className="order-tracker">
+                {statusSteps.map(
+                  (status, index) => {
+                    const completed =
+                      index < currentStatusIndex;
+
+                    const active =
+                      index === currentStatusIndex;
+
+                    return (
+                      <div
+                        className="tracker-step"
+                        key={status}
+                      >
+                        <div
+                          className={`tracker-circle ${
+                            completed
+                              ? "completed"
+                              : active
+                              ? "active"
+                              : ""
+                          }`}
+                        >
+                          {completed
+                            ? "✓"
+                            : index + 1}
+                        </div>
+
+                        <span
+                          className={
+                            completed || active
+                              ? "tracker-label active"
+                              : "tracker-label"
+                          }
+                        >
+                          {status}
+                        </span>
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+
+              {/* Items */}
+
+              <div className="student-order-items">
+                <h3>Items</h3>
+
+                {order.items.map(
+                  (item, index) => (
+                    <div
+                      className="student-order-item"
+                      key={index}
+                    >
+                      <span>
+                        {item.food_name} ×{" "}
+                        {item.quantity}
+                      </span>
+
+                      <span>
+                        ₹
+                        {(
+                          Number(item.price) *
+                          Number(item.quantity)
+                        ).toFixed(2)}
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+
+              <div className="student-order-total">
+                <span>Order Total</span>
+
+                <strong>
+                  ₹
+                  {Number(
+                    order.total_amount
+                  ).toFixed(2)}
+                </strong>
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </main>
   );
 }
