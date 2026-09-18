@@ -13,14 +13,31 @@ function Navbar() {
       <div className="nav-links">
         <Link to="/">Home</Link>
         <Link to="/menu">Menu</Link>
-        <Link to="/orders">My Orders</Link>
+
+        {isLoggedIn && (
+          <Link to="/orders">My Orders</Link>
+        )}
+
         <Link to="/cart">Cart</Link>
+
+        {/* Admin-only navigation */}
+        {isLoggedIn && user?.role === "admin" && (
+          <>
+            <Link to="/admin/orders">
+              Admin Orders
+            </Link>
+
+            <Link to="/admin/foods">
+              Manage Foods
+            </Link>
+          </>
+        )}
       </div>
 
       <div>
         {isLoggedIn ? (
           <>
-            <span>Hi, {user.name}</span>
+            <span>Hi, {user?.name}</span>
 
             <button
               className="login-button"
