@@ -30,6 +30,7 @@ app.use(cors());
 app.use(express.json());
 
 
+
 // =========================
 // FOOD MENU
 // =========================
@@ -51,6 +52,7 @@ app.get("/api/foods", (req, res) => {
 });
 
 
+
 // =========================
 // ROOT
 // =========================
@@ -58,6 +60,7 @@ app.get("/api/foods", (req, res) => {
 app.get("/", (req, res) => {
   res.send("Mealix API is running!");
 });
+
 
 
 // =========================
@@ -123,6 +126,7 @@ app.post("/api/register", async (req, res) => {
     });
   }
 });
+
 
 
 // =========================
@@ -194,6 +198,7 @@ app.post("/api/login", (req, res) => {
 });
 
 
+
 // =========================
 // PROFILE
 // =========================
@@ -206,6 +211,7 @@ app.get("/api/profile", authMiddleware, (req, res) => {
 });
 
 
+
 // =========================
 // CREATE ORDER
 // =========================
@@ -213,33 +219,35 @@ app.get("/api/profile", authMiddleware, (req, res) => {
 app.post("/api/orders", authMiddleware, (req, res) => {
   const { items } = req.body;
 
-if (!items || items.length === 0) {
-  return res.status(400).json({
-    message: "Cart is empty"
-  });
-}
+  // Check if cart is empty
+  if (!items || items.length === 0) {
+    return res.status(400).json({
+      message: "Cart is empty"
+    });
+  }
 
-const invalidItem = items.some(
-  (item) =>
-    !Number.isInteger(Number(item.food_id)) ||
-    !Number.isInteger(Number(item.quantity)) ||
-    Number(item.quantity) <= 0
-);
+  // Validate food IDs and quantities
+  const invalidItem = items.some(
+    (item) =>
+      !Number.isInteger(Number(item.food_id)) ||
+      !Number.isInteger(Number(item.quantity)) ||
+      Number(item.quantity) <= 0
+  );
 
-if (invalidItem) {
-  return res.status(400).json({
-    message: "Invalid cart items"
-  });
-}
+  if (invalidItem) {
+    return res.status(400).json({
+      message: "Invalid cart items"
+    });
+  }
 
-const userId = req.user.id;
+  const userId = req.user.id;
 
   // Get unique food IDs from the cart
   const foodIds = [
-    ...new Set(items.map((item) => item.food_id))
+    ...new Set(items.map((item) => Number(item.food_id)))
   ];
 
-  // Check the current availability directly from MySQL
+  // Get trusted food data directly from MySQL
   const foodCheckSql = `
     SELECT id, name, price, available
     FROM foods
@@ -258,14 +266,14 @@ const userId = req.user.id;
         });
       }
 
-      // Make sure every requested food actually exists
+      // Make sure every requested food exists
       if (foods.length !== foodIds.length) {
         return res.status(400).json({
           message: "One or more food items do not exist"
         });
       }
 
-      // Find foods that the admin has marked unavailable
+      // Check whether any requested food is unavailable
       const unavailableFoods = foods.filter(
         (food) => Number(food.available) !== 1
       );
@@ -280,75 +288,111 @@ const userId = req.user.id;
         });
       }
 
-        const calculatedTotal = items.reduce(
-            (total, item) => {
-                const food = foods.find(
-                    (food) => food.id === item.food_id
-                );
+      // Calculate trusted total using MySQL prices
+      const calculatedTotal = items.reduce(
+        (total, item) => {
+          const food = foods.find(
+            (food) =>
+              food.id === Number(item.food_id)
+          );
 
-                return (
-                    total +
-                    Number(food.price) * Number(item.quantity)
-                );
-            },
-            0
-        );
+          return (
+            total +
+            Number(food.price) *
+              Number(item.quantity)
+          );
+        },
+        0
+      );
 
-      // All foods are available, so create the order
-      const orderSql = `
-        INSERT INTO orders (user_id, total_amount)
-        VALUES (?, ?)
-      `;
+      // Start transaction
+      db.beginTransaction((err) => {
+        if (err) {
+          console.error(err);
 
-      db.query(
-        orderSql,
-        [userId, calculatedTotal],
-        (err, orderResult) => {
-          if (err) {
-            console.error(err);
+          return res.status(500).json({
+            message: "Failed to start order transaction"
+          });
+        }
 
-            return res.status(500).json({
-              message: "Failed to create order"
-            });
-          }
+        const orderSql = `
+          INSERT INTO orders (user_id, total_amount)
+          VALUES (?, ?)
+        `;
 
-          const orderId = orderResult.insertId;
-
-          const itemValues = items.map((item) => [
-            orderId,
-            item.food_id,
-            item.quantity
-          ]);
-
-          const itemSql = `
-            INSERT INTO order_items
-            (order_id, food_id, quantity)
-            VALUES ?
-          `;
-
-          db.query(
-            itemSql,
-            [itemValues],
-            (err) => {
-              if (err) {
+        // Create the order
+        db.query(
+          orderSql,
+          [userId, calculatedTotal],
+          (err, orderResult) => {
+            if (err) {
+              return db.rollback(() => {
                 console.error(err);
 
-                return res.status(500).json({
-                  message: "Failed to save order items"
+                res.status(500).json({
+                  message: "Failed to create order"
                 });
-              }
-
-              res.status(201).json({
-                message: "Order placed successfully",
-                orderId
               });
             }
-          );
-        }
-      );
+
+            const orderId = orderResult.insertId;
+
+            const itemValues = items.map((item) => [
+              orderId,
+              Number(item.food_id),
+              Number(item.quantity)
+            ]);
+
+            const itemSql = `
+              INSERT INTO order_items
+              (order_id, food_id, quantity)
+              VALUES ?
+            `;
+
+            // Save all order items
+            db.query(
+              itemSql,
+              [itemValues],
+              (err) => {
+                if (err) {
+                  return db.rollback(() => {
+                    console.error(err);
+
+                    res.status(500).json({
+                      message:
+                        "Failed to save order items"
+                    });
+                  });
+                }
+
+                // Everything worked, so save permanently
+                db.commit((err) => {
+                  if (err) {
+                    return db.rollback(() => {
+                      console.error(err);
+
+                      res.status(500).json({
+                        message:
+                          "Failed to complete order"
+                      });
+                    });
+                  }
+
+                  res.status(201).json({
+                    message:
+                      "Order placed successfully",
+                    orderId
+                  });
+                });
+              }
+            );
+          }
+        );
+      });
     }
   );
 });
+
 
 
 // =========================
@@ -390,6 +434,7 @@ app.get("/api/orders", authMiddleware, (req, res) => {
 });
 
 
+
 // =========================
 // ADMIN ORDERS
 // =========================
@@ -399,7 +444,6 @@ app.get(
   authMiddleware,
   adminMiddleware,
   (req, res) => {
-
     const sql = `
       SELECT
         orders.id AS order_id,
@@ -436,6 +480,7 @@ app.get(
 );
 
 
+
 // =========================
 // ADMIN STATS
 // =========================
@@ -445,7 +490,6 @@ app.get(
   authMiddleware,
   adminMiddleware,
   (req, res) => {
-
     const sql = `
       SELECT
         COUNT(DISTINCT orders.id) AS total_orders,
@@ -478,7 +522,10 @@ app.get(
           END
         ) AS completed_orders,
 
-        COALESCE(SUM(orders.total_amount), 0) AS total_revenue
+        COALESCE(
+          SUM(orders.total_amount),
+          0
+        ) AS total_revenue
 
       FROM orders
     `;
@@ -498,6 +545,7 @@ app.get(
 );
 
 
+
 // =========================
 // ADMIN ADD FOOD
 // =========================
@@ -507,25 +555,35 @@ app.post(
   authMiddleware,
   adminMiddleware,
   (req, res) => {
-
-    const { name, price, category, available } = req.body;
+    const {
+      name,
+      price,
+      category,
+      available
+    } = req.body;
 
     if (!name || !price || !category) {
       return res.status(400).json({
-        message: "Name, price and category are required"
+        message:
+          "Name, price and category are required"
       });
     }
 
-      const sql = `
-  INSERT INTO foods (name, price, category, available)
-  VALUES (?, ?, ?, ?)
-`;
+    const sql = `
+      INSERT INTO foods
+      (name, price, category, available)
+      VALUES (?, ?, ?, ?)
+    `;
 
-      db.query(
-          sql,
-          [name, price, category, available ?? true],
-          (err, result) => {
-
+    db.query(
+      sql,
+      [
+        name,
+        price,
+        category,
+        available ?? true
+      ],
+      (err, result) => {
         if (err) {
           console.error(err);
 
@@ -544,6 +602,7 @@ app.post(
 );
 
 
+
 // =========================
 // ADMIN EDIT FOOD
 // =========================
@@ -554,26 +613,44 @@ app.put(
   adminMiddleware,
   (req, res) => {
     const foodId = req.params.id;
-    const { name, price, category, available } = req.body;
+
+    const {
+      name,
+      price,
+      category,
+      available
+    } = req.body;
 
     if (!name || !price || !category) {
       return res.status(400).json({
-        message: "Name, price and category are required"
+        message:
+          "Name, price and category are required"
       });
     }
 
     const sql = `
       UPDATE foods
-      SET name = ?, price = ?, category = ?, available = ?
+      SET
+        name = ?,
+        price = ?,
+        category = ?,
+        available = ?
       WHERE id = ?
     `;
 
     db.query(
       sql,
-      [name, price, category, available, foodId],
+      [
+        name,
+        price,
+        category,
+        available,
+        foodId
+      ],
       (err, result) => {
         if (err) {
           console.error(err);
+
           return res.status(500).json({
             message: "Failed to update food"
           });
@@ -594,6 +671,7 @@ app.put(
 );
 
 
+
 // =========================
 // ADMIN DELETE FOOD
 // =========================
@@ -603,7 +681,6 @@ app.delete(
   authMiddleware,
   adminMiddleware,
   (req, res) => {
-
     const foodId = req.params.id;
 
     const sql = `
@@ -615,7 +692,6 @@ app.delete(
       sql,
       [foodId],
       (err, result) => {
-
         if (err) {
           console.error(err);
 
@@ -639,6 +715,7 @@ app.delete(
 );
 
 
+
 // =========================
 // ADMIN UPDATE ORDER STATUS
 // =========================
@@ -648,7 +725,6 @@ app.patch(
   authMiddleware,
   adminMiddleware,
   (req, res) => {
-
     const orderId = req.params.id;
     const { status } = req.body;
 
@@ -675,12 +751,12 @@ app.patch(
       sql,
       [status, orderId],
       (err, result) => {
-
         if (err) {
           console.error(err);
 
           return res.status(500).json({
-            message: "Failed to update order status"
+            message:
+              "Failed to update order status"
           });
         }
 
@@ -691,12 +767,14 @@ app.patch(
         }
 
         res.json({
-          message: "Order status updated successfully"
+          message:
+            "Order status updated successfully"
         });
       }
     );
   }
 );
+
 
 
 // =========================
