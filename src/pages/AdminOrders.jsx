@@ -148,7 +148,10 @@ function AdminOrders() {
     {}
   );
 
-  const orderList = Object.values(groupedOrders);
+  const orderList = Object.values(groupedOrders).sort(
+  (a, b) =>
+    new Date(b.created_at) - new Date(a.created_at)
+);
 
   return (
     <main className="admin-dashboard">
@@ -194,7 +197,7 @@ function AdminOrders() {
             </div>
 
             <div className="stat-card">
-              <h3>Total Revenue</h3>
+              <h3>Completed Revenue</h3>
               <p>₹{Number(stats.total_revenue).toFixed(2)}</p>
             </div>
           </div>

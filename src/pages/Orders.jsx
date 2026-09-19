@@ -69,7 +69,10 @@ function Orders() {
     {}
   );
 
-  const orderList = Object.values(groupedOrders);
+  const orderList = Object.values(groupedOrders).sort(
+  (a, b) =>
+    new Date(b.created_at) - new Date(a.created_at)
+);
 
   // =========================
   // ORDER STATUS STEPS

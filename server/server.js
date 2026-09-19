@@ -611,9 +611,15 @@ app.get(
         ) AS completed_orders,
 
         COALESCE(
-          SUM(orders.total_amount),
-          0
-        ) AS total_revenue
+  SUM(
+    CASE
+      WHEN orders.status = 'Completed'
+      THEN orders.total_amount
+      ELSE 0
+    END
+  ),
+  0
+) AS total_revenue
 
       FROM orders
     `;
