@@ -335,24 +335,24 @@ app.post("/api/orders", authMiddleware, (req, res) => {
               });
             }
 
+            // Get newly created order ID
             const orderId = orderResult.insertId;
 
-            const itemValues = items.map((item) => [
-              orderId,
-              Number(item.food_id),
-              Number(item.quantity)
-            ]);
+            // Generate pickup token
+            // Example: order ID 18 -> MXL-018
+            const pickupToken =
+              `MXL-${String(orderId).padStart(3, "0")}`;
 
-            const itemSql = `
-              INSERT INTO order_items
-              (order_id, food_id, quantity)
-              VALUES ?
+            // Save pickup token in the order
+            const tokenSql = `
+              UPDATE orders
+              SET pickup_token = ?
+              WHERE id = ?
             `;
 
-            // Save all order items
             db.query(
-              itemSql,
-              [itemValues],
+              tokenSql,
+              [pickupToken, orderId],
               (err) => {
                 if (err) {
                   return db.rollback(() => {
@@ -360,30 +360,63 @@ app.post("/api/orders", authMiddleware, (req, res) => {
 
                     res.status(500).json({
                       message:
-                        "Failed to save order items"
+                        "Failed to generate pickup token"
                     });
                   });
                 }
 
-                // Everything worked, so save permanently
-                db.commit((err) => {
-                  if (err) {
-                    return db.rollback(() => {
-                      console.error(err);
+                // Prepare order items
+                const itemValues = items.map((item) => [
+                  orderId,
+                  Number(item.food_id),
+                  Number(item.quantity)
+                ]);
 
-                      res.status(500).json({
+                const itemSql = `
+                  INSERT INTO order_items
+                  (order_id, food_id, quantity)
+                  VALUES ?
+                `;
+
+                // Save all order items
+                db.query(
+                  itemSql,
+                  [itemValues],
+                  (err) => {
+                    if (err) {
+                      return db.rollback(() => {
+                        console.error(err);
+
+                        res.status(500).json({
+                          message:
+                            "Failed to save order items"
+                        });
+                      });
+                    }
+
+                    // Everything worked, so save permanently
+                    db.commit((err) => {
+                      if (err) {
+                        return db.rollback(() => {
+                          console.error(err);
+
+                          res.status(500).json({
+                            message:
+                              "Failed to complete order"
+                          });
+                        });
+                      }
+
+                      // Return both order ID and pickup token
+                      res.status(201).json({
                         message:
-                          "Failed to complete order"
+                          "Order placed successfully",
+                        orderId,
+                        pickupToken
                       });
                     });
                   }
-
-                  res.status(201).json({
-                    message:
-                      "Order placed successfully",
-                    orderId
-                  });
-                });
+                );
               }
             );
           }
@@ -392,8 +425,6 @@ app.post("/api/orders", authMiddleware, (req, res) => {
     }
   );
 });
-
-
 
 // =========================
 // STUDENT ORDERS
@@ -405,6 +436,7 @@ app.get("/api/orders", authMiddleware, (req, res) => {
   const sql = `
     SELECT
       orders.id AS order_id,
+      orders.pickup_token,
       orders.total_amount,
       orders.status,
       orders.created_at,

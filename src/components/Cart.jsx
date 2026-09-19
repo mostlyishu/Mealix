@@ -88,11 +88,12 @@ function Cart() {
 
       clearCart();
 
-      navigate("/order-success", {
-        state: {
-          orderId: data.orderId
-        }
-      });
+        navigate("/order-success", {
+            state: {
+                orderId: data.orderId,
+                pickupToken: data.pickupToken
+            }
+        });
     } catch (error) {
       setMessage(error.message);
     } finally {

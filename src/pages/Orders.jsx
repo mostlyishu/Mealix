@@ -46,13 +46,14 @@ function Orders() {
   const groupedOrders = orders.reduce(
     (groups, item) => {
       if (!groups[item.order_id]) {
-        groups[item.order_id] = {
-          order_id: item.order_id,
-          total_amount: item.total_amount,
-          status: item.status,
-          created_at: item.created_at,
-          items: []
-        };
+          groups[item.order_id] = {
+              order_id: item.order_id,
+              pickup_token: item.pickup_token,
+              total_amount: item.total_amount,
+              status: item.status,
+              created_at: item.created_at,
+              items: []
+          };
       }
 
       groups[item.order_id].items.push({
@@ -82,6 +83,25 @@ function Orders() {
   function getStatusIndex(status) {
     return statusSteps.indexOf(status);
   }
+
+  function getEstimatedPickupTime(status) {
+  switch (status) {
+    case "Pending":
+      return "15–20 minutes";
+
+    case "Preparing":
+      return "8–12 minutes";
+
+    case "Ready":
+      return "Ready for pickup";
+
+    case "Completed":
+      return "Order collected";
+
+    default:
+      return "Calculating...";
+  }
+}
 
   return (
     <main className="orders-page">
@@ -154,6 +174,19 @@ function Orders() {
                   {order.status}
                 </span>
               </div>
+                  {order.pickup_token && (
+                      <div className="order-pickup-token">
+                          <span>Pickup Token</span>
+                          <strong>{order.pickup_token}</strong>
+                      </div>
+                  )}
+
+                  <div className="estimated-pickup">
+                      <span>Estimated Pickup</span>
+                      <strong>
+                          {getEstimatedPickupTime(order.status)}
+                      </strong>
+                  </div>
 
               {/* Order tracking */}
 

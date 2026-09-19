@@ -1211,3 +1211,214 @@ main {
     font-size: 10px;
   }
 }
+
+/* =========================
+   ORDER SUCCESS PAGE
+   ========================= */
+
+.order-success-page {
+  max-width: 700px;
+  margin: auto;
+  padding: 60px 20px;
+}
+
+.order-success-card {
+  background: white;
+  padding: 45px 35px;
+  border-radius: 18px;
+  text-align: center;
+
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.07);
+}
+
+.success-icon {
+  width: 60px;
+  height: 60px;
+
+  margin: 0 auto 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #222;
+  color: white;
+
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.order-success-card h1 {
+  margin: 0 0 10px;
+  font-size: 30px;
+}
+
+.success-message {
+  color: #666;
+  margin-bottom: 15px;
+}
+
+.success-order-id {
+  font-weight: bold;
+  margin-bottom: 25px;
+}
+
+
+/* Pickup Token */
+
+.pickup-token-box {
+  margin: 30px auto;
+
+  padding: 25px;
+
+  max-width: 400px;
+
+  background: #f5f5f5;
+
+  border: 2px dashed #bbb;
+  border-radius: 14px;
+}
+
+.pickup-token-box span {
+  display: block;
+
+  margin-bottom: 10px;
+
+  color: #666;
+
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pickup-token-box strong {
+  display: block;
+
+  font-size: 34px;
+  letter-spacing: 3px;
+
+  margin-bottom: 10px;
+}
+
+.pickup-token-box p {
+  margin: 0;
+
+  color: #777;
+  font-size: 13px;
+}
+
+
+/* Buttons */
+
+.success-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+
+  margin-top: 25px;
+}
+
+.track-order-button,
+.order-more-button {
+  padding: 11px 20px;
+
+  border-radius: 8px;
+
+  font-size: 14px;
+}
+
+.track-order-button {
+  border: none;
+
+  background: #222;
+  color: white;
+}
+
+.track-order-button:hover {
+  background: #444;
+}
+
+.order-more-button {
+  background: white;
+
+  border: 1px solid #ddd;
+}
+
+.order-more-button:hover {
+  background: #f5f5f5;
+}
+
+
+/* Mobile */
+
+@media (max-width: 500px) {
+  .order-success-card {
+    padding: 35px 20px;
+  }
+
+  .order-success-card h1 {
+    font-size: 25px;
+  }
+
+  .pickup-token-box strong {
+    font-size: 28px;
+  }
+
+  .success-actions {
+    flex-direction: column;
+  }
+
+  .success-actions a {
+    width: 100%;
+  }
+
+  .success-actions button {
+    width: 100%;
+  }
+}
+
+/* Pickup token inside My Orders */
+
+.order-pickup-token {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+
+  margin-bottom: 30px;
+  padding: 10px 15px;
+
+  background: #f5f5f5;
+  border: 1px dashed #bbb;
+  border-radius: 9px;
+}
+
+.order-pickup-token span {
+  color: #777;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.order-pickup-token strong {
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+
+.estimated-pickup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin-bottom: 25px;
+}
+
+.estimated-pickup span {
+  color: #777;
+  font-size: 13px;
+}
+
+.estimated-pickup strong {
+  font-size: 16px;
+}
