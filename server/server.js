@@ -461,11 +461,67 @@ app.get("/api/orders", authMiddleware, (req, res) => {
       });
     }
 
-    res.json(results);
+    // Get all currently active orders in the canteen
+    const queueSql = `
+      SELECT id, status, created_at
+      FROM orders
+      WHERE status IN ('Pending', 'Preparing')
+      ORDER BY created_at ASC, id ASC
+    `;
+
+    db.query(queueSql, (err, activeOrders) => {
+      if (err) {
+        console.error(err);
+
+        return res.status(500).json({
+          message: "Failed to calculate pickup time"
+        });
+      }
+
+      // Add queue information to every returned row
+      const ordersWithEstimate = results.map((item) => {
+        let ordersAhead = 0;
+        let estimatedPickup = "";
+
+        if (item.status === "Pending") {
+          const currentPosition = activeOrders.findIndex(
+            (order) => order.id === item.order_id
+          );
+
+          ordersAhead =
+            currentPosition >= 0
+              ? currentPosition
+              : 0;
+
+          const minimumMinutes =
+            5 + ordersAhead * 5;
+
+          const maximumMinutes =
+            minimumMinutes + 5;
+
+          estimatedPickup =
+            `${minimumMinutes}–${maximumMinutes} minutes`;
+        } else if (item.status === "Preparing") {
+          estimatedPickup = "5–10 minutes";
+        } else if (item.status === "Ready") {
+          estimatedPickup = "Ready for pickup";
+        } else if (item.status === "Completed") {
+          estimatedPickup = "Order collected";
+        } else {
+          estimatedPickup = "Calculating...";
+        }
+
+        return {
+          ...item,
+          orders_ahead: ordersAhead,
+          estimated_pickup: estimatedPickup
+        };
+      });
+
+      res.json(ordersWithEstimate);
+    });
   });
 });
-
-
 
 // =========================
 // ADMIN ORDERS

@@ -1422,3 +1422,20 @@ main {
 .estimated-pickup strong {
   font-size: 16px;
 }
+
+.queue-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin-bottom: 25px;
+}
+
+.queue-info span {
+  color: #777;
+  font-size: 13px;
+}
+
+.queue-info strong {
+  font-size: 16px;
+}

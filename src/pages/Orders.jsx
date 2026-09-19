@@ -52,6 +52,8 @@ function Orders() {
               total_amount: item.total_amount,
               status: item.status,
               created_at: item.created_at,
+              orders_ahead: item.orders_ahead,
+              estimated_pickup: item.estimated_pickup,
               items: []
           };
       }
@@ -84,24 +86,6 @@ function Orders() {
     return statusSteps.indexOf(status);
   }
 
-  function getEstimatedPickupTime(status) {
-  switch (status) {
-    case "Pending":
-      return "15–20 minutes";
-
-    case "Preparing":
-      return "8–12 minutes";
-
-    case "Ready":
-      return "Ready for pickup";
-
-    case "Completed":
-      return "Order collected";
-
-    default:
-      return "Calculating...";
-  }
-}
 
   return (
     <main className="orders-page">
@@ -184,9 +168,15 @@ function Orders() {
                   <div className="estimated-pickup">
                       <span>Estimated Pickup</span>
                       <strong>
-                          {getEstimatedPickupTime(order.status)}
+                          {order.estimated_pickup}
                       </strong>
                   </div>
+                  {order.status === "Pending" && (
+                      <div className="queue-info">
+                          <span>Orders Ahead</span>
+                          <strong>{order.orders_ahead}</strong>
+                      </div>
+                  )}
 
               {/* Order tracking */}
 
