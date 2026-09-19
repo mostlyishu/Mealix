@@ -13,6 +13,7 @@ import AdminRoute from "./components/AdminRoute";
 import OrderSuccess from "./pages/OrderSuccess";
 import AdminOrders from "./pages/AdminOrders";
 import AdminFoods from "./pages/AdminFoods";
+import AdminAnalytics from "./pages/AdminAnalytics";
 
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -55,6 +56,14 @@ function App() {
               element={
                 <AdminRoute>
                   <AdminFoods />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/analytics"
+              element={
+                <AdminRoute>
+                  <AdminAnalytics />
                 </AdminRoute>
               }
             />

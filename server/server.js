@@ -645,7 +645,18 @@ app.get(
     END
   ),
   0
-) AS total_revenue
+) AS total_revenue,
+
+COALESCE(
+  AVG(
+    CASE
+      WHEN orders.status = 'Completed'
+      THEN orders.total_amount
+      ELSE NULL
+    END
+  ),
+  0
+) AS average_order_value
 
       FROM orders
     `;
@@ -664,6 +675,62 @@ app.get(
   }
 );
 
+// =========================
+// ADMIN FOOD ANALYTICS
+// =========================
+
+app.get(
+  "/api/admin/analytics/foods",
+  authMiddleware,
+  adminMiddleware,
+  (req, res) => {
+    const sql = `
+      SELECT
+        foods.id,
+        foods.name,
+        foods.category,
+
+        COALESCE(
+          SUM(order_items.quantity),
+          0
+        ) AS total_quantity_sold,
+
+        COALESCE(
+          SUM(order_items.quantity * foods.price),
+          0
+        ) AS total_sales
+
+      FROM foods
+
+      JOIN order_items
+        ON foods.id = order_items.food_id
+
+      JOIN orders
+        ON order_items.order_id = orders.id
+
+      WHERE orders.status = 'Completed'
+
+      GROUP BY
+        foods.id,
+        foods.name,
+        foods.category
+
+      ORDER BY total_quantity_sold DESC
+    `;
+
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.error(err);
+
+        return res.status(500).json({
+          message: "Failed to fetch food analytics"
+        });
+      }
+
+      res.json(results);
+    });
+  }
+);
 
 
 // =========================

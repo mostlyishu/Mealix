@@ -30,6 +30,9 @@ function Navbar() {
             <Link to="/admin/foods">
               Manage Foods
             </Link>
+                      <Link to="/admin/analytics">
+                          Analytics
+                      </Link>
           </>
         )}
       </div>
