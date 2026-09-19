@@ -220,7 +220,7 @@ app.post("/api/orders", authMiddleware, (req, res) => {
   const { items } = req.body;
 
   // Check if cart is empty
-  if (!items || items.length === 0) {
+  if (!items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({
       message: "Cart is empty"
     });
@@ -242,10 +242,38 @@ app.post("/api/orders", authMiddleware, (req, res) => {
 
   const userId = req.user.id;
 
-  // Get unique food IDs from the cart
-  const foodIds = [
-    ...new Set(items.map((item) => Number(item.food_id)))
-  ];
+  // =========================
+  // NORMALIZE DUPLICATE ITEMS
+  // =========================
+
+  const itemMap = new Map();
+
+  items.forEach((item) => {
+    const foodId = Number(item.food_id);
+    const quantity = Number(item.quantity);
+
+    if (itemMap.has(foodId)) {
+      itemMap.set(
+        foodId,
+        itemMap.get(foodId) + quantity
+      );
+    } else {
+      itemMap.set(foodId, quantity);
+    }
+  });
+
+  const normalizedItems = Array.from(
+    itemMap,
+    ([food_id, quantity]) => ({
+      food_id,
+      quantity
+    })
+  );
+
+  // Get unique food IDs
+  const foodIds = normalizedItems.map(
+    (item) => item.food_id
+  );
 
   // Get trusted food data directly from MySQL
   const foodCheckSql = `
@@ -289,17 +317,15 @@ app.post("/api/orders", authMiddleware, (req, res) => {
       }
 
       // Calculate trusted total using MySQL prices
-      const calculatedTotal = items.reduce(
+      const calculatedTotal = normalizedItems.reduce(
         (total, item) => {
           const food = foods.find(
-            (food) =>
-              food.id === Number(item.food_id)
+            (food) => food.id === item.food_id
           );
 
           return (
             total +
-            Number(food.price) *
-              Number(item.quantity)
+            Number(food.price) * item.quantity
           );
         },
         0
@@ -343,7 +369,7 @@ app.post("/api/orders", authMiddleware, (req, res) => {
             const pickupToken =
               `MXL-${String(orderId).padStart(3, "0")}`;
 
-            // Save pickup token in the order
+            // Save pickup token
             const tokenSql = `
               UPDATE orders
               SET pickup_token = ?
@@ -365,12 +391,13 @@ app.post("/api/orders", authMiddleware, (req, res) => {
                   });
                 }
 
-                // Prepare order items
-                const itemValues = items.map((item) => [
-                  orderId,
-                  Number(item.food_id),
-                  Number(item.quantity)
-                ]);
+                // Prepare NORMALIZED order items
+                const itemValues =
+                  normalizedItems.map((item) => [
+                    orderId,
+                    item.food_id,
+                    item.quantity
+                  ]);
 
                 const itemSql = `
                   INSERT INTO order_items
@@ -394,7 +421,7 @@ app.post("/api/orders", authMiddleware, (req, res) => {
                       });
                     }
 
-                    // Everything worked, so save permanently
+                    // Everything worked
                     db.commit((err) => {
                       if (err) {
                         return db.rollback(() => {
@@ -407,7 +434,6 @@ app.post("/api/orders", authMiddleware, (req, res) => {
                         });
                       }
 
-                      // Return both order ID and pickup token
                       res.status(201).json({
                         message:
                           "Order placed successfully",
