@@ -392,18 +392,25 @@ app.post("/api/orders", authMiddleware, (req, res) => {
                 }
 
                 // Prepare NORMALIZED order items
-                const itemValues =
-                  normalizedItems.map((item) => [
-                    orderId,
-                    item.food_id,
-                    item.quantity
-                  ]);
+// Store the price at the time the order is placed
+const itemValues = normalizedItems.map((item) => {
+  const food = foods.find(
+    (food) => food.id === item.food_id
+  );
 
-                const itemSql = `
-                  INSERT INTO order_items
-                  (order_id, food_id, quantity)
-                  VALUES ?
-                `;
+  return [
+    orderId,
+    item.food_id,
+    item.quantity,
+    Number(food.price)
+  ];
+});
+
+const itemSql = `
+  INSERT INTO order_items
+  (order_id, food_id, quantity, unit_price)
+  VALUES ?
+`;
 
                 // Save all order items
                 db.query(
@@ -696,7 +703,9 @@ app.get(
         ) AS total_quantity_sold,
 
         COALESCE(
-          SUM(order_items.quantity * foods.price),
+          SUM(
+            order_items.quantity * order_items.unit_price
+          ),
           0
         ) AS total_sales
 
@@ -732,6 +741,48 @@ app.get(
   }
 );
 
+// =========================
+// ADMIN DAILY ANALYTICSf
+// =========================
+
+app.get(
+  "/api/admin/analytics/daily",
+  authMiddleware,
+  adminMiddleware,
+  (req, res) => {
+    const sql = `
+      SELECT
+        DATE(created_at) AS date,
+
+        COUNT(id) AS total_orders,
+
+        COALESCE(
+          SUM(total_amount),
+          0
+        ) AS total_revenue
+
+      FROM orders
+
+      WHERE status = 'Completed'
+
+      GROUP BY DATE(created_at)
+
+      ORDER BY DATE(created_at) ASC
+    `;
+
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.error(err);
+
+        return res.status(500).json({
+          message: "Failed to fetch daily analytics"
+        });
+      }
+
+      res.json(results);
+    });
+  }
+);
 
 // =========================
 // ADMIN ADD FOOD

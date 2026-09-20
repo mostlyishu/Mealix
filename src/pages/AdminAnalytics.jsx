@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import {
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  Legend
 } from "recharts";
 
 function AdminAnalytics() {
@@ -14,11 +17,56 @@ function AdminAnalytics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [stats, setStats] = useState(null);
+  const [dailyAnalytics, setDailyAnalytics] = useState([]);
 
   useEffect(() => {
   fetchAnalytics();
   fetchStats();
+  fetchDailyAnalytics();
 }, []);
+
+async function fetchDailyAnalytics() {
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      "http://localhost:5001/api/admin/analytics/daily",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to fetch daily analytics"
+      );
+    }
+
+    const formattedData = data.map((day) => ({
+      ...day,
+
+      date: new Date(day.date).toLocaleDateString(
+        "en-IN",
+        {
+          day: "2-digit",
+          month: "short",
+          timeZone: "UTC"
+        }
+      ),
+
+      total_orders: Number(day.total_orders),
+      total_revenue: Number(day.total_revenue)
+    }));
+
+    setDailyAnalytics(formattedData);
+  } catch (err) {
+    console.error("Daily analytics error:", err);
+  }
+}
 
   async function fetchAnalytics() {
     try {
@@ -135,6 +183,7 @@ const mostPopularText =
                   onClick={() => {
                       fetchAnalytics();
                       fetchStats();
+                      fetchDailyAnalytics();
                   }}
         >
           Refresh
@@ -182,6 +231,105 @@ const mostPopularText =
                           </strong>
                       </div>
           </section>
+
+          <section className="analytics-chart-section">
+  <div className="section-heading">
+    <h2>Daily Revenue Trend</h2>
+
+    <p>
+      Revenue generated from completed orders by day.
+    </p>
+  </div>
+
+  {dailyAnalytics.length === 0 ? (
+    <p className="analytics-message">
+      No daily sales data available yet.
+    </p>
+  ) : (
+    <div className="food-chart">
+      <ResponsiveContainer width="100%" height={320}>
+        <LineChart
+          data={dailyAnalytics}
+          margin={{
+            top: 10,
+            right: 20,
+            left: 10,
+            bottom: 10
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+
+          <XAxis dataKey="date" />
+
+          <YAxis />
+
+          <Tooltip
+            formatter={(value) => [
+              `₹${Number(value).toFixed(2)}`,
+              "Revenue"
+            ]}
+          />
+
+          <Legend />
+
+          <Line
+            type="monotone"
+            dataKey="total_revenue"
+            name="Revenue"
+            stroke="#111827"
+            strokeWidth={3}
+            activeDot={{ r: 6 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )}
+</section>
+
+<section className="analytics-chart-section">
+  <div className="section-heading">
+    <h2>Daily Order Volume</h2>
+
+    <p>
+      Number of completed orders received each day.
+    </p>
+  </div>
+
+  {dailyAnalytics.length === 0 ? (
+    <p className="analytics-message">
+      No daily order data available yet.
+    </p>
+  ) : (
+    <div className="food-chart">
+      <ResponsiveContainer width="100%" height={320}>
+        <BarChart
+          data={dailyAnalytics}
+          margin={{
+            top: 10,
+            right: 20,
+            left: 0,
+            bottom: 10
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+
+          <XAxis dataKey="date" />
+
+          <YAxis allowDecimals={false} />
+
+          <Tooltip />
+
+          <Bar
+            dataKey="total_orders"
+            name="Completed Orders"
+            fill="#111827"
+            radius={[6, 6, 0, 0]}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )}
+</section>
 
                   <section className="analytics-chart-section">
                       <div className="section-heading">
