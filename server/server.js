@@ -822,6 +822,57 @@ app.get(
 );
 
 // =========================
+// ADMIN CATEGORY ANALYTICS
+// =========================
+
+app.get(
+  "/api/admin/analytics/categories",
+  authMiddleware,
+  adminMiddleware,
+  (req, res) => {
+    const sql = `
+      SELECT
+        foods.category,
+
+        SUM(order_items.quantity) AS total_quantity_sold,
+
+        COALESCE(
+          SUM(
+            order_items.quantity * order_items.unit_price
+          ),
+          0
+        ) AS total_sales
+
+      FROM order_items
+
+      JOIN foods
+        ON order_items.food_id = foods.id
+
+      JOIN orders
+        ON order_items.order_id = orders.id
+
+      WHERE orders.status = 'Completed'
+
+      GROUP BY foods.category
+
+      ORDER BY total_quantity_sold DESC
+    `;
+
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.error(err);
+
+        return res.status(500).json({
+          message: "Failed to fetch category analytics"
+        });
+      }
+
+      res.json(results);
+    });
+  }
+);
+
+// =========================
 // ADMIN ADD FOOD
 // =========================
 

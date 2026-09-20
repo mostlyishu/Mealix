@@ -19,13 +19,50 @@ function AdminAnalytics() {
   const [stats, setStats] = useState(null);
   const [dailyAnalytics, setDailyAnalytics] = useState([]);
   const [hourlyAnalytics, setHourlyAnalytics] = useState([]);
+  const [categoryAnalytics, setCategoryAnalytics] = useState([]);
 
   useEffect(() => {
   fetchAnalytics();
   fetchStats();
   fetchDailyAnalytics();
   fetchHourlyAnalytics();
+  fetchCategoryAnalytics();
 }, []);
+
+async function fetchCategoryAnalytics() {
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      "http://localhost:5001/api/admin/analytics/categories",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to fetch category analytics"
+      );
+    }
+
+    const formattedData = data.map((category) => ({
+      ...category,
+      total_quantity_sold: Number(
+        category.total_quantity_sold
+      ),
+      total_sales: Number(category.total_sales)
+    }));
+
+    setCategoryAnalytics(formattedData);
+  } catch (err) {
+    console.error("Category analytics error:", err);
+  }
+}
 
 async function fetchHourlyAnalytics() {
   try {
@@ -226,6 +263,27 @@ const mostPopularText =
       )
     : null;
 
+    const highestCategoryQuantity =
+  categoryAnalytics.length > 0
+    ? Math.max(
+        ...categoryAnalytics.map(
+          (category) => category.total_quantity_sold
+        )
+      )
+    : 0;
+
+const topCategories = categoryAnalytics.filter(
+  (category) =>
+    category.total_quantity_sold === highestCategoryQuantity
+);
+
+const topCategoryText =
+  topCategories.length > 0
+    ? topCategories
+        .map((category) => category.category)
+        .join(" & ")
+    : "No data";
+
   return (
     <main className="analytics-page">
       <div className="analytics-header">
@@ -243,6 +301,7 @@ const mostPopularText =
                       fetchStats();
                       fetchDailyAnalytics();
                       fetchHourlyAnalytics();
+                      fetchCategoryAnalytics();
                   }}
         >
           Refresh
@@ -297,6 +356,11 @@ const mostPopularText =
         : "No data"}
     </strong>
   </div>
+
+  <div className="analytics-stat-card">
+  <span>Top Category</span>
+  <strong>{topCategoryText}</strong>
+</div>
 </section>
 
           <section className="analytics-chart-section">
@@ -434,6 +498,51 @@ const mostPopularText =
           <Bar
             dataKey="total_orders"
             name="Completed Orders"
+            fill="#111827"
+            radius={[6, 6, 0, 0]}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )}
+</section>
+
+<section className="analytics-chart-section">
+  <div className="section-heading">
+    <h2>Category Performance</h2>
+
+    <p>
+      Quantity sold across different food categories.
+    </p>
+  </div>
+
+  {categoryAnalytics.length === 0 ? (
+    <p className="analytics-message">
+      No category sales data available yet.
+    </p>
+  ) : (
+    <div className="food-chart">
+      <ResponsiveContainer width="100%" height={320}>
+        <BarChart
+          data={categoryAnalytics}
+          margin={{
+            top: 10,
+            right: 20,
+            left: 0,
+            bottom: 10
+          }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+
+          <XAxis dataKey="category" />
+
+          <YAxis allowDecimals={false} />
+
+          <Tooltip />
+
+          <Bar
+            dataKey="total_quantity_sold"
+            name="Quantity Sold"
             fill="#111827"
             radius={[6, 6, 0, 0]}
           />
