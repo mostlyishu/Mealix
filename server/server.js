@@ -785,6 +785,43 @@ app.get(
 );
 
 // =========================
+// ADMIN HOURLY ANALYTICS
+// =========================
+
+app.get(
+  "/api/admin/analytics/hourly",
+  authMiddleware,
+  adminMiddleware,
+  (req, res) => {
+    const sql = `
+      SELECT
+        HOUR(created_at) AS hour,
+        COUNT(id) AS total_orders
+
+      FROM orders
+
+      WHERE status = 'Completed'
+
+      GROUP BY HOUR(created_at)
+
+      ORDER BY HOUR(created_at) ASC
+    `;
+
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.error(err);
+
+        return res.status(500).json({
+          message: "Failed to fetch hourly analytics"
+        });
+      }
+
+      res.json(results);
+    });
+  }
+);
+
+// =========================
 // ADMIN ADD FOOD
 // =========================
 
