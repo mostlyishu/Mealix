@@ -18,13 +18,11 @@ function Cart() {
   const [message, setMessage] = useState("");
   const [placingOrder, setPlacingOrder] = useState(false);
 
-  // Calculate total quantity
   const totalItems = cart.reduce(
     (sum, food) => sum + food.quantity,
     0
   );
 
-  // Calculate cart total
   const total = cart.reduce(
     (sum, food) =>
       sum + Number(food.price) * food.quantity,
@@ -32,19 +30,16 @@ function Cart() {
   );
 
   async function handlePlaceOrder() {
-    // Check cart first
     if (cart.length === 0) {
       setMessage("Your cart is empty.");
       return;
     }
 
-    // Check login before showing confirmation
     if (!isLoggedIn) {
       setMessage("Please login before placing an order.");
       return;
     }
 
-    // Only ask for confirmation if order can be placed
     const confirmOrder = window.confirm(
       `Place this order for ₹${total.toFixed(2)}?`
     );
@@ -68,12 +63,10 @@ function Cart() {
         "http://localhost:5001/api/orders",
         {
           method: "POST",
-
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`
           },
-
           body: JSON.stringify({
             items: orderItems
           })
@@ -88,12 +81,12 @@ function Cart() {
 
       clearCart();
 
-        navigate("/order-success", {
-            state: {
-                orderId: data.orderId,
-                pickupToken: data.pickupToken
-            }
-        });
+      navigate("/order-success", {
+        state: {
+          orderId: data.orderId,
+          pickupToken: data.pickupToken
+        }
+      });
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -114,31 +107,47 @@ function Cart() {
 
   return (
     <main className="cart-page">
-      <div className="cart-header">
+
+      {/* CART HEADER */}
+
+      <section className="cart-header">
+        <span className="cart-eyebrow">
+          YOUR ORDER
+        </span>
+
         <h1>Your Cart</h1>
 
         <p>
-          Review your items before placing your order.
+          Review your meal, adjust quantities and place
+          your campus order when you're ready.
         </p>
-      </div>
+      </section>
 
       {message && (
-        <p className="cart-message">
-          {message}
-        </p>
+        <div className="cart-message">
+          <span>!</span>
+          <p>{message}</p>
+        </div>
       )}
 
       {cart.length === 0 ? (
-        <div className="empty-cart">
+
+        /* EMPTY CART */
+
+        <section className="empty-cart">
           <div className="empty-cart-icon">
             🛒
           </div>
 
-          <h2>Your cart is empty</h2>
+          <span className="empty-cart-label">
+            NOTHING HERE YET
+          </span>
+
+          <h2>Your cart is waiting for something delicious.</h2>
 
           <p>
-            Add something from the campus menu to get
-            started.
+            Explore today's campus menu and add your
+            favourites to get started.
           </p>
 
           <button
@@ -146,21 +155,33 @@ function Cart() {
             onClick={() => navigate("/menu")}
           >
             Browse Menu
+            <span>→</span>
           </button>
-        </div>
+        </section>
       ) : (
         <div className="cart-layout">
 
-          {/* Cart items */}
+          {/* CART ITEMS */}
 
           <section className="cart-items-section">
-            <div className="cart-section-header">
-              <h2>Cart Items</h2>
 
-              <span>
-                {totalItems}{" "}
-                {totalItems === 1 ? "item" : "items"}
-              </span>
+            <div className="cart-section-header">
+              <div>
+                <h2>Your Items</h2>
+                <p>
+                  {totalItems}{" "}
+                  {totalItems === 1 ? "item" : "items"} in
+                  your cart
+                </p>
+              </div>
+
+              <button
+                className="cart-clear-link"
+                onClick={handleClearCart}
+                disabled={placingOrder}
+              >
+                Clear cart
+              </button>
             </div>
 
             <div className="cart-items-list">
@@ -173,43 +194,52 @@ function Cart() {
                     className="cart-item-card"
                     key={food.id}
                   >
-                    <div className="cart-item-info">
-                      <span className="cart-item-category">
-                        {food.category}
-                      </span>
+                    <div className="cart-item-main">
 
-                      <h3>{food.name}</h3>
+                      <div className="cart-item-visual">
+                        🍽️
+                      </div>
 
-                      <p>
-                        ₹{Number(food.price).toFixed(2)} each
-                      </p>
+                      <div className="cart-item-info">
+                        <span className="cart-item-category">
+                          {food.category}
+                        </span>
+
+                        <h3>{food.name}</h3>
+
+                        <p>
+                          ₹{Number(food.price).toFixed(0)}
+                          {" "}per item
+                        </p>
+                      </div>
                     </div>
 
                     <div className="cart-item-actions">
+
                       <div className="quantity-control">
                         <button
                           onClick={() =>
                             decreaseQuantity(food.id)
                           }
+                          aria-label={`Decrease ${food.name}`}
                         >
                           −
                         </button>
 
-                        <span>
-                          {food.quantity}
-                        </span>
+                        <span>{food.quantity}</span>
 
                         <button
                           onClick={() =>
                             increaseQuantity(food.id)
                           }
+                          aria-label={`Increase ${food.name}`}
                         >
                           +
                         </button>
                       </div>
 
                       <strong className="item-subtotal">
-                        ₹{subtotal.toFixed(2)}
+                        ₹{subtotal.toFixed(0)}
                       </strong>
 
                       <button
@@ -227,29 +257,37 @@ function Cart() {
             </div>
           </section>
 
-          {/* Order summary */}
+          {/* ORDER SUMMARY */}
 
           <aside className="order-summary">
-            <h2>Order Summary</h2>
 
-            <div className="summary-row">
-              <span>Total Items</span>
-              <span>{totalItems}</span>
+            <div className="summary-heading">
+              <span>ORDER SUMMARY</span>
+              <h2>Ready to order?</h2>
             </div>
 
-            <div className="summary-row">
-              <span>Subtotal</span>
-              <span>₹{total.toFixed(2)}</span>
+            <div className="summary-details">
+              <div className="summary-row">
+                <span>Items</span>
+                <strong>{totalItems}</strong>
+              </div>
+
+              <div className="summary-row">
+                <span>Subtotal</span>
+                <strong>₹{total.toFixed(0)}</strong>
+              </div>
+
+              <div className="summary-row">
+                <span>Pickup</span>
+                <strong>Campus Canteen</strong>
+              </div>
             </div>
 
             <div className="summary-divider" />
 
             <div className="summary-row summary-total">
-              <strong>Total</strong>
-
-              <strong>
-                ₹{total.toFixed(2)}
-              </strong>
+              <span>Total</span>
+              <strong>₹{total.toFixed(0)}</strong>
             </div>
 
             <button
@@ -260,15 +298,15 @@ function Cart() {
               {placingOrder
                 ? "Placing Order..."
                 : "Confirm & Place Order"}
+
+              {!placingOrder && <span>→</span>}
             </button>
 
-            <button
-              className="clear-cart-button"
-              onClick={handleClearCart}
-              disabled={placingOrder}
-            >
-              Clear Cart
-            </button>
+            <p className="summary-note">
+              You'll receive a pickup token after your
+              order is confirmed.
+            </p>
+
           </aside>
         </div>
       )}
