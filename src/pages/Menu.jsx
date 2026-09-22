@@ -9,7 +9,6 @@ function Menu() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Search and filter states
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] =
     useState("All");
@@ -33,13 +32,13 @@ function Menu() {
       });
   }, []);
 
-  // Create category list automatically from foods
   const categories = [
     "All",
-    ...new Set(foods.map((food) => food.category))
+    ...new Set(
+      foods.map((food) => food.category)
+    )
   ];
 
-  // Filter foods using search + selected category
   const filteredFoods = foods.filter((food) => {
     const matchesSearch = food.name
       .toLowerCase()
@@ -53,30 +52,51 @@ function Menu() {
   });
 
   return (
-    <main>
-      <section className="menu-section">
-        <div className="menu-header">
-          <h1>Campus Menu</h1>
+    <main className="menu-page">
 
-          <p>
-            Fresh food available on campus today.
-          </p>
-        </div>
+      {/* MENU INTRO */}
 
-        {/* Search */}
+      <section className="menu-header">
+  <span className="menu-eyebrow">
+    TODAY'S CAMPUS MENU
+  </span>
 
+  <h1>What are you craving?</h1>
+
+  <p>
+    Fresh campus favourites, ready when you are.
+    Find your meal and skip the queue.
+  </p>
+</section>
+
+
+      {/* SEARCH + FILTER */}
+
+      <section className="menu-controls">
         <div className="menu-search">
+          <span className="menu-search-icon">
+            ⌕
+          </span>
+
           <input
             type="text"
-            placeholder="Search food..."
+            placeholder="Search burgers, coffee, snacks..."
             value={search}
             onChange={(event) =>
               setSearch(event.target.value)
             }
           />
-        </div>
 
-        {/* Category filters */}
+          {search && (
+            <button
+              className="clear-search-button"
+              onClick={() => setSearch("")}
+              aria-label="Clear search"
+            >
+              ×
+            </button>
+          )}
+        </div>
 
         <div className="category-filters">
           {categories.map((category) => (
@@ -95,36 +115,111 @@ function Menu() {
             </button>
           ))}
         </div>
-
-        {/* Loading / error */}
-
-        {loading && <p>Loading menu...</p>}
-
-        {error && <p>{error}</p>}
-
-        {/* Food cards */}
-
-        {!loading &&
-          !error &&
-          filteredFoods.length === 0 && (
-            <p className="no-food-message">
-              No food items found.
-            </p>
-          )}
-
-        <div className="food-grid">
-          {filteredFoods.map((food) => (
-            <FoodCard
-              key={food.id}
-              name={food.name}
-              price={food.price}
-              category={food.category}
-              available={food.available}
-              onAdd={() => addToCart(food)}
-            />
-          ))}
-        </div>
       </section>
+
+
+      {/* MENU RESULTS INFO */}
+
+      {!loading && !error && (
+        <div className="menu-results-header">
+          <p>
+            <strong>{filteredFoods.length}</strong>{" "}
+            {filteredFoods.length === 1
+              ? "item"
+              : "items"}{" "}
+            available to explore
+          </p>
+
+          {selectedCategory !== "All" && (
+            <button
+              onClick={() =>
+                setSelectedCategory("All")
+              }
+            >
+              Clear filter
+            </button>
+          )}
+        </div>
+      )}
+
+
+      {/* LOADING */}
+
+      {loading && (
+        <div className="menu-state-card">
+          <div className="menu-loader"></div>
+
+          <h3>Preparing the menu...</h3>
+
+          <p>
+            Fetching today's campus favourites.
+          </p>
+        </div>
+      )}
+
+
+      {/* ERROR */}
+
+      {error && (
+        <div className="menu-state-card menu-error-state">
+          <span>!</span>
+
+          <h3>We couldn't load the menu.</h3>
+
+          <p>{error}</p>
+        </div>
+      )}
+
+
+      {/* EMPTY SEARCH */}
+
+      {!loading &&
+        !error &&
+        filteredFoods.length === 0 && (
+          <div className="menu-state-card">
+            <span className="empty-search-icon">
+              ⌕
+            </span>
+
+            <h3>No food found</h3>
+
+            <p>
+              Try another search or choose a different
+              category.
+            </p>
+
+            <button
+              className="reset-menu-button"
+              onClick={() => {
+                setSearch("");
+                setSelectedCategory("All");
+              }}
+            >
+              View all food
+            </button>
+          </div>
+        )}
+
+
+      {/* FOOD GRID */}
+
+      {!loading &&
+        !error &&
+        filteredFoods.length > 0 && (
+          <section className="food-grid">
+            {filteredFoods.map((food) => (
+              <FoodCard
+                key={food.id}
+                name={food.name}
+                price={food.price}
+                category={food.category}
+                available={food.available}
+                onAdd={() => addToCart(food)}
+              />
+            ))}
+          </section>
+        )}
+
     </main>
   );
 }
