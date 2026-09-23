@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchOrders();
@@ -46,16 +49,16 @@ function Orders() {
   const groupedOrders = orders.reduce(
     (groups, item) => {
       if (!groups[item.order_id]) {
-          groups[item.order_id] = {
-              order_id: item.order_id,
-              pickup_token: item.pickup_token,
-              total_amount: item.total_amount,
-              status: item.status,
-              created_at: item.created_at,
-              orders_ahead: item.orders_ahead,
-              estimated_pickup: item.estimated_pickup,
-              items: []
-          };
+        groups[item.order_id] = {
+          order_id: item.order_id,
+          pickup_token: item.pickup_token,
+          total_amount: item.total_amount,
+          status: item.status,
+          created_at: item.created_at,
+          orders_ahead: item.orders_ahead,
+          estimated_pickup: item.estimated_pickup,
+          items: []
+        };
       }
 
       groups[item.order_id].items.push({
@@ -70,12 +73,12 @@ function Orders() {
   );
 
   const orderList = Object.values(groupedOrders).sort(
-  (a, b) =>
-    new Date(b.created_at) - new Date(a.created_at)
-);
+    (a, b) =>
+      new Date(b.created_at) - new Date(a.created_at)
+  );
 
   // =========================
-  // ORDER STATUS STEPS
+  // ORDER STATUS
   // =========================
 
   const statusSteps = [
@@ -89,16 +92,22 @@ function Orders() {
     return statusSteps.indexOf(status);
   }
 
-
   return (
     <main className="orders-page">
-      <div className="orders-header">
+
+      {/* PAGE HEADER */}
+
+      <section className="orders-header">
         <div>
+          <span className="orders-eyebrow">
+            ORDER TRACKING
+          </span>
+
           <h1>My Orders</h1>
 
           <p>
-            Track your Mealix orders and their current
-            status.
+            Follow your Mealix orders from the kitchen
+            to pickup.
           </p>
         </div>
 
@@ -107,167 +116,268 @@ function Orders() {
           onClick={fetchOrders}
           disabled={loading}
         >
-          {loading ? "Refreshing..." : "Refresh"}
+          <span>↻</span>
+          {loading ? "Refreshing..." : "Refresh Orders"}
         </button>
-      </div>
+      </section>
 
-      {loading && <p>Loading orders...</p>}
+      {/* ERROR */}
 
       {error && (
-        <p className="orders-error">
-          {error}
-        </p>
+        <div className="orders-error">
+          <span>!</span>
+          <p>{error}</p>
+        </div>
       )}
+
+      {/* LOADING */}
+
+      {loading && (
+        <div className="orders-loading">
+          <div className="orders-loader"></div>
+
+          <h3>Loading your orders...</h3>
+
+          <p>
+            Checking the latest status from the canteen.
+          </p>
+        </div>
+      )}
+
+      {/* EMPTY */}
 
       {!loading &&
         !error &&
         orderList.length === 0 && (
-          <div className="no-orders">
-            <h2>No orders yet</h2>
+          <section className="no-orders">
+            <div className="no-orders-icon">
+              🧾
+            </div>
+
+            <span>NO ORDERS YET</span>
+
+            <h2>Your Mealix journey starts with a meal.</h2>
 
             <p>
-              Your Mealix orders will appear here after
-              checkout.
+              Place your first campus order and track it
+              here from preparation to pickup.
             </p>
-          </div>
+
+            <button
+              onClick={() => navigate("/menu")}
+            >
+              Explore Menu
+              <span>→</span>
+            </button>
+          </section>
         )}
 
-      <div className="student-orders-list">
-        {orderList.map((order) => {
-          const currentStatusIndex =
-            getStatusIndex(order.status);
+      {/* ORDERS */}
 
-          return (
-            <article
-              className="student-order-card"
-              key={order.order_id}
-            >
-              <div className="student-order-header">
-                <div>
-                  <h2>
-                    Order #{order.order_id}
-                  </h2>
+      {!loading && !error && (
+        <section className="student-orders-list">
+          {orderList.map((order) => {
+            const currentStatusIndex =
+              getStatusIndex(order.status);
 
-                  <p>
-                    {new Date(
-                      order.created_at
-                    ).toLocaleString()}
-                  </p>
+            return (
+              <article
+                className="student-order-card"
+                key={order.order_id}
+              >
+
+                {/* ORDER TOP */}
+
+                <div className="student-order-header">
+                  <div>
+                    <span className="order-number-label">
+                      MEALIX ORDER
+                    </span>
+
+                    <h2>
+                      Order #{order.order_id}
+                    </h2>
+
+                    <p>
+                      {new Date(
+                        order.created_at
+                      ).toLocaleString()}
+                    </p>
+                  </div>
+
+                  <span
+                    className={`order-status ${order.status.toLowerCase()}`}
+                  >
+                    {order.status}
+                  </span>
                 </div>
 
-                <span
-                  className={`order-status ${order.status.toLowerCase()}`}
-                >
-                  {order.status}
-                </span>
-              </div>
+                {/* PICKUP INFORMATION */}
+
+                <div className="order-info-grid">
+
                   {order.pickup_token && (
-                      <div className="order-pickup-token">
-                          <span>Pickup Token</span>
-                          <strong>{order.pickup_token}</strong>
-                      </div>
-                  )}
+                    <div className="order-info-box pickup-info-box">
+                      <span>Pickup Token</span>
 
-                  <div className="estimated-pickup">
-                      <span>Estimated Pickup</span>
                       <strong>
-                          {order.estimated_pickup}
+                        {order.pickup_token}
                       </strong>
-                  </div>
-                  {order.status === "Pending" && (
-                      <div className="queue-info">
-                          <span>Orders Ahead</span>
-                          <strong>{order.orders_ahead}</strong>
-                      </div>
+
+                      <small>
+                        Show this at the counter
+                      </small>
+                    </div>
                   )}
 
-              {/* Order tracking */}
+                  <div className="order-info-box">
+                    <span>Estimated Pickup</span>
 
-              <div className="order-tracker">
-                {statusSteps.map(
-                  (status, index) => {
-                    const completed =
-                      index < currentStatusIndex;
+                    <strong>
+                      {order.estimated_pickup ||
+                        "Updating..."}
+                    </strong>
 
-                    const active =
-                      index === currentStatusIndex;
+                    <small>
+                      Based on the current queue
+                    </small>
+                  </div>
 
-                    return (
+                  {order.status === "Pending" && (
+                    <div className="order-info-box">
+                      <span>Orders Ahead</span>
+
+                      <strong>
+                        {order.orders_ahead ?? 0}
+                      </strong>
+
+                      <small>
+                        Before your order
+                      </small>
+                    </div>
+                  )}
+
+                </div>
+
+                {/* STATUS TRACKER */}
+
+                <div className="order-tracking-section">
+                  <div className="tracking-heading">
+                    <h3>Order Progress</h3>
+
+                    <span>
+                      {order.status}
+                    </span>
+                  </div>
+
+                  <div className="order-tracker">
+                    {statusSteps.map(
+                      (status, index) => {
+                        const completed =
+                          index < currentStatusIndex;
+
+                        const active =
+                          index === currentStatusIndex;
+
+                        return (
+                          <div
+                            className="tracker-step"
+                            key={status}
+                          >
+                            <div
+                              className={`tracker-circle ${
+                                completed
+                                  ? "completed"
+                                  : active
+                                  ? "active"
+                                  : ""
+                              }`}
+                            >
+                              {completed
+                                ? "✓"
+                                : index + 1}
+                            </div>
+
+                            <span
+                              className={
+                                completed || active
+                                  ? "tracker-label active"
+                                  : "tracker-label"
+                              }
+                            >
+                              {status}
+                            </span>
+                          </div>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
+
+                {/* ITEMS */}
+
+                <div className="student-order-items">
+                  <div className="order-items-heading">
+                    <h3>Order Items</h3>
+
+                    <span>
+                      {order.items.reduce(
+                        (sum, item) =>
+                          sum +
+                          Number(item.quantity),
+                        0
+                      )}{" "}
+                      items
+                    </span>
+                  </div>
+
+                  {order.items.map(
+                    (item, index) => (
                       <div
-                        className="tracker-step"
-                        key={status}
+                        className="student-order-item"
+                        key={index}
                       >
-                        <div
-                          className={`tracker-circle ${
-                            completed
-                              ? "completed"
-                              : active
-                              ? "active"
-                              : ""
-                          }`}
-                        >
-                          {completed
-                            ? "✓"
-                            : index + 1}
+                        <div>
+                          <span className="order-item-quantity">
+                            {item.quantity}×
+                          </span>
+
+                          <span>
+                            {item.food_name}
+                          </span>
                         </div>
 
-                        <span
-                          className={
-                            completed || active
-                              ? "tracker-label active"
-                              : "tracker-label"
-                          }
-                        >
-                          {status}
-                        </span>
+                        <strong>
+                          ₹
+                          {(
+                            Number(item.price) *
+                            Number(item.quantity)
+                          ).toFixed(0)}
+                        </strong>
                       </div>
-                    );
-                  }
-                )}
-              </div>
+                    )
+                  )}
+                </div>
 
-              {/* Items */}
+                {/* TOTAL */}
 
-              <div className="student-order-items">
-                <h3>Items</h3>
+                <div className="student-order-total">
+                  <span>Order Total</span>
 
-                {order.items.map(
-                  (item, index) => (
-                    <div
-                      className="student-order-item"
-                      key={index}
-                    >
-                      <span>
-                        {item.food_name} ×{" "}
-                        {item.quantity}
-                      </span>
+                  <strong>
+                    ₹
+                    {Number(
+                      order.total_amount
+                    ).toFixed(0)}
+                  </strong>
+                </div>
 
-                      <span>
-                        ₹
-                        {(
-                          Number(item.price) *
-                          Number(item.quantity)
-                        ).toFixed(2)}
-                      </span>
-                    </div>
-                  )
-                )}
-              </div>
+              </article>
+            );
+          })}
+        </section>
+      )}
 
-              <div className="student-order-total">
-                <span>Order Total</span>
-
-                <strong>
-                  ₹
-                  {Number(
-                    order.total_amount
-                  ).toFixed(2)}
-                </strong>
-              </div>
-            </article>
-          );
-        })}
-      </div>
     </main>
   );
 }
