@@ -29,7 +29,9 @@ function AdminOrders() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch admin stats");
+        throw new Error(
+          "Failed to fetch admin stats"
+        );
       }
 
       const data = await response.json();
@@ -46,6 +48,8 @@ function AdminOrders() {
 
   async function fetchOrders() {
     try {
+      setLoading(true);
+
       const token = localStorage.getItem("token");
 
       const response = await fetch(
@@ -58,7 +62,9 @@ function AdminOrders() {
       );
 
       if (!response.ok) {
-        throw new Error("Access denied. Admins only.");
+        throw new Error(
+          "Access denied. Admins only."
+        );
       }
 
       const data = await response.json();
@@ -75,11 +81,15 @@ function AdminOrders() {
   // UPDATE ORDER STATUS
   // =========================
 
-  async function updateStatus(orderId, newStatus) {
+  async function updateStatus(
+    orderId,
+    newStatus
+  ) {
     try {
       setError("");
 
-      const token = localStorage.getItem("token");
+      const token =
+        localStorage.getItem("token");
 
       const response = await fetch(
         `http://localhost:5001/api/admin/orders/${orderId}/status`,
@@ -101,7 +111,6 @@ function AdminOrders() {
         throw new Error(data.message);
       }
 
-      // Update order status on screen
       setOrders((currentOrders) =>
         currentOrders.map((order) =>
           order.order_id === orderId
@@ -113,11 +122,23 @@ function AdminOrders() {
         )
       );
 
-      // Refresh dashboard numbers
       await fetchStats();
     } catch (error) {
       setError(error.message);
     }
+  }
+
+  // =========================
+  // REFRESH DASHBOARD
+  // =========================
+
+  async function refreshDashboard() {
+    setError("");
+
+    await Promise.all([
+      fetchOrders(),
+      fetchStats()
+    ]);
   }
 
   // =========================
@@ -130,7 +151,8 @@ function AdminOrders() {
         groups[item.order_id] = {
           order_id: item.order_id,
           customer_name: item.customer_name,
-          customer_email: item.customer_email,
+          customer_email:
+            item.customer_email,
           total_amount: item.total_amount,
           status: item.status,
           created_at: item.created_at,
@@ -148,190 +170,404 @@ function AdminOrders() {
     {}
   );
 
-  const orderList = Object.values(groupedOrders).sort(
-  (a, b) =>
-    new Date(b.created_at) - new Date(a.created_at)
-);
+  const orderList = Object.values(
+    groupedOrders
+  ).sort(
+    (a, b) =>
+      new Date(b.created_at) -
+      new Date(a.created_at)
+  );
+
+  const totalActiveOrders = stats
+    ? Number(stats.pending_orders) +
+      Number(stats.preparing_orders) +
+      Number(stats.ready_orders)
+    : 0;
 
   return (
-    <main className="admin-dashboard">
-      <div className="admin-header">
+    <main className="admin-dashboard-v2">
+
+      {/* =========================
+          PAGE HEADER
+          ========================= */}
+
+      <section className="admin-v2-header">
         <div>
-          <h1>Canteen Dashboard</h1>
+          <span className="admin-v2-eyebrow">
+            CANTEEN OPERATIONS
+          </span>
+
+          <h1>Admin Dashboard</h1>
+
           <p>
-            Manage Mealix orders and track canteen activity.
+            Monitor incoming orders, manage kitchen
+            progress and keep campus service moving.
           </p>
         </div>
-      </div>
 
-      {/* Dashboard statistics */}
+        <button
+          className="admin-v2-refresh"
+          onClick={refreshDashboard}
+          disabled={loading}
+        >
+          <span>↻</span>
+
+          {loading
+            ? "Refreshing..."
+            : "Refresh Dashboard"}
+        </button>
+      </section>
+
+      {/* =========================
+          STATISTICS
+          ========================= */}
 
       {stats && (
-        <section className="dashboard-overview">
-          <h2>Dashboard Overview</h2>
+        <section className="admin-v2-overview">
 
-          <div className="stats-grid">
-            <div className="stat-card">
-              <h3>Total Orders</h3>
-              <p>{stats.total_orders}</p>
+          <div className="admin-v2-section-heading">
+            <div>
+              <h2>Today at a glance</h2>
+
+              <p>
+                Live overview of Mealix canteen
+                activity.
+              </p>
             </div>
 
-            <div className="stat-card">
-              <h3>Pending</h3>
-              <p>{stats.pending_orders}</p>
-            </div>
+            <span className="admin-active-summary">
+              {totalActiveOrders} active orders
+            </span>
+          </div>
 
-            <div className="stat-card">
-              <h3>Preparing</h3>
-              <p>{stats.preparing_orders}</p>
-            </div>
+          <div className="admin-v2-stats-grid">
 
-            <div className="stat-card">
-              <h3>Ready</h3>
-              <p>{stats.ready_orders}</p>
-            </div>
+            <article className="admin-v2-stat-card">
+              <div className="admin-stat-icon">
+                #
+              </div>
 
-            <div className="stat-card">
-              <h3>Completed</h3>
-              <p>{stats.completed_orders}</p>
-            </div>
+              <div>
+                <span>Total Orders</span>
 
-            <div className="stat-card">
-              <h3>Completed Revenue</h3>
-              <p>₹{Number(stats.total_revenue).toFixed(2)}</p>
-            </div>
+                <strong>
+                  {stats.total_orders}
+                </strong>
+
+                <small>
+                  All recorded orders
+                </small>
+              </div>
+            </article>
+
+            <article className="admin-v2-stat-card pending">
+              <div className="admin-stat-icon">
+                ◷
+              </div>
+
+              <div>
+                <span>Pending</span>
+
+                <strong>
+                  {stats.pending_orders}
+                </strong>
+
+                <small>
+                  Waiting for kitchen
+                </small>
+              </div>
+            </article>
+
+            <article className="admin-v2-stat-card preparing">
+              <div className="admin-stat-icon">
+                ◌
+              </div>
+
+              <div>
+                <span>Preparing</span>
+
+                <strong>
+                  {stats.preparing_orders}
+                </strong>
+
+                <small>
+                  Currently cooking
+                </small>
+              </div>
+            </article>
+
+            <article className="admin-v2-stat-card ready">
+              <div className="admin-stat-icon">
+                ✓
+              </div>
+
+              <div>
+                <span>Ready</span>
+
+                <strong>
+                  {stats.ready_orders}
+                </strong>
+
+                <small>
+                  Waiting for pickup
+                </small>
+              </div>
+            </article>
+
+            <article className="admin-v2-stat-card completed">
+              <div className="admin-stat-icon">
+                ✓
+              </div>
+
+              <div>
+                <span>Completed</span>
+
+                <strong>
+                  {stats.completed_orders}
+                </strong>
+
+                <small>
+                  Successfully collected
+                </small>
+              </div>
+            </article>
+
+            <article className="admin-v2-stat-card revenue">
+              <div className="admin-stat-icon">
+                ₹
+              </div>
+
+              <div>
+                <span>Completed Revenue</span>
+
+                <strong>
+                  ₹
+                  {Number(
+                    stats.total_revenue
+                  ).toFixed(0)}
+                </strong>
+
+                <small>
+                  From completed orders
+                </small>
+              </div>
+            </article>
+
           </div>
         </section>
       )}
 
-      {/* Orders */}
+      {/* =========================
+          ORDERS
+          ========================= */}
 
-      <section className="admin-orders-section">
-        <div className="section-header">
-          <h2>Recent Orders</h2>
+      <section className="admin-v2-orders">
 
-          <button
-            className="refresh-button"
-            onClick={() => {
-              fetchOrders();
-              fetchStats();
-            }}
-          >
-            Refresh
-          </button>
+        <div className="admin-v2-section-heading">
+          <div>
+            <h2>Recent Orders</h2>
+
+            <p>
+              Review orders and update their kitchen
+              status.
+            </p>
+          </div>
+
+          {!loading && (
+            <span className="admin-order-count">
+              {orderList.length} orders
+            </span>
+          )}
         </div>
 
-        {loading && <p>Loading orders...</p>}
-
         {error && (
-          <p className="admin-error">
-            {error}
-          </p>
+          <div className="admin-v2-error">
+            <span>!</span>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {loading && (
+          <div className="admin-v2-loading">
+            <div className="admin-v2-loader"></div>
+
+            <h3>Loading canteen orders...</h3>
+
+            <p>
+              Getting the latest Mealix activity.
+            </p>
+          </div>
         )}
 
         {!loading &&
           !error &&
           orderList.length === 0 && (
-            <p>No orders yet.</p>
+            <div className="admin-v2-empty">
+              <div>🧾</div>
+
+              <h3>No orders yet</h3>
+
+              <p>
+                New campus orders will appear here
+                automatically.
+              </p>
+            </div>
           )}
 
-        <div className="admin-orders-list">
-          {orderList.map((order) => (
-            <article
-              className="admin-order-card"
-              key={order.order_id}
-            >
-              <div className="order-card-header">
-                <div>
-                  <h2>
-                    Order #{order.order_id}
-                  </h2>
+        {!loading && !error && (
+          <div className="admin-v2-orders-list">
+            {orderList.map((order) => {
+              const totalItems =
+                order.items.reduce(
+                  (sum, item) =>
+                    sum +
+                    Number(item.quantity),
+                  0
+                );
 
-                  <p>
-                    {new Date(
-                      order.created_at
-                    ).toLocaleString()}
-                  </p>
-                </div>
-
-                <span
-                  className={`order-status ${order.status.toLowerCase()}`}
+              return (
+                <article
+                  className="admin-v2-order-card"
+                  key={order.order_id}
                 >
-                  {order.status}
-                </span>
-              </div>
+                  {/* Order heading */}
 
-              <div className="customer-details">
-                <p>
-                  <strong>Customer:</strong>{" "}
-                  {order.customer_name}
-                </p>
+                  <div className="admin-order-top">
+                    <div>
+                      <span className="admin-order-label">
+                        MEALIX ORDER
+                      </span>
 
-                <p>
-                  <strong>Email:</strong>{" "}
-                  {order.customer_email}
-                </p>
-              </div>
+                      <h3>
+                        Order #{order.order_id}
+                      </h3>
 
-              <div className="order-items">
-                <h3>Items</h3>
+                      <p>
+                        {new Date(
+                          order.created_at
+                        ).toLocaleString()}
+                      </p>
+                    </div>
 
-                {order.items.map(
-                  (item, index) => (
-                    <p key={index}>
-                      {item.food_name} ×{" "}
-                      {item.quantity}
-                    </p>
-                  )
-                )}
-              </div>
+                    <span
+                      className={`order-status ${order.status.toLowerCase()}`}
+                    >
+                      {order.status}
+                    </span>
+                  </div>
 
-              <div className="order-total">
-                <strong>Total</strong>
-                <strong>
-                  ₹{Number(
-                    order.total_amount
-                  ).toFixed(2)}
-                </strong>
-              </div>
+                  {/* Customer */}
 
-              <div className="status-control">
-                <label
-                  htmlFor={`status-${order.order_id}`}
-                >
-                  Update Status
-                </label>
+                  <div className="admin-customer-block">
+                    <div className="admin-customer-avatar">
+                      {order.customer_name
+                        ?.charAt(0)
+                        .toUpperCase()}
+                    </div>
 
-                <select
-                  id={`status-${order.order_id}`}
-                  value={order.status}
-                  onChange={(event) =>
-                    updateStatus(
-                      order.order_id,
-                      event.target.value
-                    )
-                  }
-                >
-                  <option value="Pending">
-                    Pending
-                  </option>
+                    <div>
+                      <span>Customer</span>
 
-                  <option value="Preparing">
-                    Preparing
-                  </option>
+                      <strong>
+                        {order.customer_name}
+                      </strong>
 
-                  <option value="Ready">
-                    Ready
-                  </option>
+                      <small>
+                        {order.customer_email}
+                      </small>
+                    </div>
+                  </div>
 
-                  <option value="Completed">
-                    Completed
-                  </option>
-                </select>
-              </div>
-            </article>
-          ))}
-        </div>
+                  {/* Items */}
+
+                  <div className="admin-order-items-v2">
+                    <div className="admin-items-heading">
+                      <span>ORDER ITEMS</span>
+
+                      <small>
+                        {totalItems}{" "}
+                        {totalItems === 1
+                          ? "item"
+                          : "items"}
+                      </small>
+                    </div>
+
+                    {order.items.map(
+                      (item, index) => (
+                        <div
+                          className="admin-order-item-row"
+                          key={index}
+                        >
+                          <span>
+                            {item.food_name}
+                          </span>
+
+                          <strong>
+                            ×{item.quantity}
+                          </strong>
+                        </div>
+                      )
+                    )}
+                  </div>
+
+                  {/* Total */}
+
+                  <div className="admin-order-total-v2">
+                    <span>Order Total</span>
+
+                    <strong>
+                      ₹
+                      {Number(
+                        order.total_amount
+                      ).toFixed(0)}
+                    </strong>
+                  </div>
+
+                  {/* Status */}
+
+                  <div className="admin-status-control-v2">
+                    <div>
+                      <span>ORDER STATUS</span>
+
+                      <small>
+                        Update kitchen progress
+                      </small>
+                    </div>
+
+                    <select
+                      id={`status-${order.order_id}`}
+                      value={order.status}
+                      onChange={(event) =>
+                        updateStatus(
+                          order.order_id,
+                          event.target.value
+                        )
+                      }
+                    >
+                      <option value="Pending">
+                        Pending
+                      </option>
+
+                      <option value="Preparing">
+                        Preparing
+                      </option>
+
+                      <option value="Ready">
+                        Ready
+                      </option>
+
+                      <option value="Completed">
+                        Completed
+                      </option>
+                    </select>
+                  </div>
+
+                </article>
+              );
+            })}
+          </div>
+        )}
+
       </section>
     </main>
   );
