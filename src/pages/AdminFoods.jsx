@@ -12,6 +12,8 @@ function AdminFoods() {
 
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchFoods();
@@ -19,6 +21,9 @@ function AdminFoods() {
 
   async function fetchFoods() {
     try {
+      setLoading(true);
+      setError("");
+
       const response = await fetch(
         "http://localhost:5001/api/foods"
       );
@@ -32,22 +37,25 @@ function AdminFoods() {
       setFoods(data);
     } catch (error) {
       setError(error.message);
+    } finally {
+      setLoading(false);
     }
   }
 
   function resetForm() {
-  setName("");
-  setPrice("");
-  setCategory("");
-  setAvailable(true);
-  setEditingId(null);
-}
+    setName("");
+    setPrice("");
+    setCategory("");
+    setAvailable(true);
+    setEditingId(null);
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
 
     setError("");
     setMessage("");
+    setSaving(true);
 
     const token = localStorage.getItem("token");
 
@@ -85,22 +93,29 @@ function AdminFoods() {
       );
 
       resetForm();
-      fetchFoods();
+      await fetchFoods();
     } catch (error) {
       setError(error.message);
+    } finally {
+      setSaving(false);
     }
   }
 
   function startEditing(food) {
-  setEditingId(food.id);
-  setName(food.name);
-  setPrice(food.price);
-  setCategory(food.category);
-  setAvailable(Number(food.available) === 1);
+    setEditingId(food.id);
+    setName(food.name);
+    setPrice(food.price);
+    setCategory(food.category);
+    setAvailable(Number(food.available) === 1);
 
-  setMessage("");
-  setError("");
-}
+    setMessage("");
+    setError("");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  }
 
   async function deleteFood(id) {
     const confirmDelete = window.confirm(
@@ -112,6 +127,9 @@ function AdminFoods() {
     }
 
     try {
+      setError("");
+      setMessage("");
+
       const token = localStorage.getItem("token");
 
       const response = await fetch(
@@ -132,108 +150,333 @@ function AdminFoods() {
 
       setMessage("Food deleted successfully!");
 
-      fetchFoods();
+      await fetchFoods();
     } catch (error) {
       setError(error.message);
     }
   }
 
+  const availableFoods = foods.filter(
+    (food) => Number(food.available) === 1
+  ).length;
+
+  const unavailableFoods =
+    foods.length - availableFoods;
+
   return (
-    <main>
-      <h1>Food Management</h1>
+    <main className="admin-foods-v2">
 
-      <h2>
-        {editingId ? "Edit Food" : "Add New Food"}
-      </h2>
+      {/* PAGE HEADER */}
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Food name"
-          value={name}
-          onChange={(event) =>
-            setName(event.target.value)
-          }
-        />
+      <section className="foods-admin-header">
+        <div>
+          <span className="foods-admin-eyebrow">
+            MENU CONTROL
+          </span>
 
-        <input
-          type="number"
-          placeholder="Price"
-          value={price}
-          onChange={(event) =>
-            setPrice(event.target.value)
-          }
-        />
+          <h1>Manage Foods</h1>
 
-        <input
-          type="text"
-          placeholder="Category"
-          value={category}
-          onChange={(event) =>
-            setCategory(event.target.value)
-          }
-        />
-        <label>
-  <input
-    type="checkbox"
-    checked={available}
-    onChange={(event) =>
-      setAvailable(event.target.checked)
-    }
-  />
-
-  Available
-</label>
-
-        <button type="submit">
-          {editingId ? "Update Food" : "Add Food"}
-        </button>
-
-        {editingId && (
-          <button
-            type="button"
-            onClick={resetForm}
-          >
-            Cancel
-          </button>
-        )}
-      </form>
-
-      {message && <p>{message}</p>}
-
-      {error && <p>{error}</p>}
-
-      <hr />
-
-      <h2>Current Menu</h2>
-
-      {foods.map((food) => (
-        <div key={food.id}>
-          <h3>{food.name}</h3>
-
-          <p>₹{food.price}</p>
-
-          <p>{food.category}</p>
-
-              <p>
-                  Status: {food.available ? "Available" : "Unavailable"}
-              </p>
-
-          <button
-            onClick={() => startEditing(food)}
-          >
-            Edit
-          </button>
-
-          <button
-            onClick={() => deleteFood(food.id)}
-          >
-            Delete
-          </button>
-
-          <hr />
+          <p>
+            Add new dishes, update menu details and
+            control what students can order.
+          </p>
         </div>
-      ))}
+
+        <button
+          className="foods-refresh-button"
+          onClick={fetchFoods}
+          disabled={loading}
+        >
+          <span>↻</span>
+          {loading ? "Refreshing..." : "Refresh Menu"}
+        </button>
+      </section>
+
+      {/* QUICK SUMMARY */}
+
+      <section className="foods-admin-summary">
+        <div className="foods-summary-card">
+          <span>Total Foods</span>
+          <strong>{foods.length}</strong>
+          <small>Menu items</small>
+        </div>
+
+        <div className="foods-summary-card available">
+          <span>Available</span>
+          <strong>{availableFoods}</strong>
+          <small>Ready to order</small>
+        </div>
+
+        <div className="foods-summary-card unavailable">
+          <span>Unavailable</span>
+          <strong>{unavailableFoods}</strong>
+          <small>Currently hidden</small>
+        </div>
+      </section>
+
+      {/* MESSAGES */}
+
+      {message && (
+        <div className="foods-admin-message success">
+          <span>✓</span>
+          <p>{message}</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="foods-admin-message error">
+          <span>!</span>
+          <p>{error}</p>
+        </div>
+      )}
+
+      {/* EDITOR */}
+
+      <section className="food-editor-card">
+        <div className="food-editor-heading">
+          <div>
+            <span>
+              {editingId
+                ? "EDIT MENU ITEM"
+                : "NEW MENU ITEM"}
+            </span>
+
+            <h2>
+              {editingId
+                ? "Update food"
+                : "Add a new food"}
+            </h2>
+
+            <p>
+              {editingId
+                ? "Change the details below and save your updates."
+                : "Enter the dish details to add it to the Mealix menu."}
+            </p>
+          </div>
+
+          {editingId && (
+            <span className="editing-food-badge">
+              Editing #{editingId}
+            </span>
+          )}
+        </div>
+
+        <form
+          className="food-editor-form"
+          onSubmit={handleSubmit}
+        >
+          <div className="food-form-field food-name-field">
+            <label htmlFor="food-name">
+              Food name
+            </label>
+
+            <input
+              id="food-name"
+              type="text"
+              placeholder="e.g. Paneer Tikka Burger"
+              value={name}
+              onChange={(event) =>
+                setName(event.target.value)
+              }
+              required
+            />
+          </div>
+
+          <div className="food-form-field">
+            <label htmlFor="food-category">
+              Category
+            </label>
+
+            <input
+              id="food-category"
+              type="text"
+              placeholder="e.g. Burger"
+              value={category}
+              onChange={(event) =>
+                setCategory(event.target.value)
+              }
+              required
+            />
+          </div>
+
+          <div className="food-form-field">
+            <label htmlFor="food-price">
+              Price
+            </label>
+
+            <div className="food-price-input">
+              <span>₹</span>
+
+              <input
+                id="food-price"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="60"
+                value={price}
+                onChange={(event) =>
+                  setPrice(event.target.value)
+                }
+                required
+              />
+            </div>
+          </div>
+
+          <label className="food-availability-control">
+            <input
+              type="checkbox"
+              checked={available}
+              onChange={(event) =>
+                setAvailable(event.target.checked)
+              }
+            />
+
+            <span className="food-toggle">
+              <span></span>
+            </span>
+
+            <span className="food-toggle-text">
+              <strong>Available for ordering</strong>
+              <small>
+                Students can add this item to cart
+              </small>
+            </span>
+          </label>
+
+          <div className="food-form-actions">
+            <button
+              type="submit"
+              className="food-save-button"
+              disabled={saving}
+            >
+              {saving
+                ? "Saving..."
+                : editingId
+                ? "Save Changes"
+                : "Add Food"}
+
+              {!saving && <span>→</span>}
+            </button>
+
+            {editingId && (
+              <button
+                type="button"
+                className="food-cancel-button"
+                onClick={resetForm}
+              >
+                Cancel Editing
+              </button>
+            )}
+          </div>
+        </form>
+      </section>
+
+      {/* CURRENT MENU */}
+
+      <section className="admin-food-list-section">
+        <div className="foods-list-heading">
+          <div>
+            <span>LIVE MENU</span>
+            <h2>Current Menu</h2>
+            <p>
+              Manage the dishes currently stored in
+              Mealix.
+            </p>
+          </div>
+
+          <span className="foods-count-badge">
+            {foods.length}{" "}
+            {foods.length === 1 ? "food" : "foods"}
+          </span>
+        </div>
+
+        {loading && (
+          <div className="foods-loading-state">
+            <div className="foods-loader"></div>
+            <p>Loading menu...</p>
+          </div>
+        )}
+
+        {!loading && foods.length === 0 && (
+          <div className="foods-empty-state">
+            <div>🍽️</div>
+            <h3>No foods yet</h3>
+            <p>
+              Add your first menu item using the form
+              above.
+            </p>
+          </div>
+        )}
+
+        {!loading && foods.length > 0 && (
+          <div className="admin-food-grid">
+            {foods.map((food) => {
+              const isAvailable =
+                Number(food.available) === 1;
+
+              return (
+                <article
+                  className="admin-food-card-v2"
+                  key={food.id}
+                >
+                  <div className="admin-food-card-top">
+                    <div className="admin-food-placeholder">
+                      🍽️
+                    </div>
+
+                    <span
+                      className={`food-admin-status ${
+                        isAvailable
+                          ? "available"
+                          : "unavailable"
+                      }`}
+                    >
+                      <span></span>
+
+                      {isAvailable
+                        ? "Available"
+                        : "Unavailable"}
+                    </span>
+                  </div>
+
+                  <div className="admin-food-card-body">
+                    <span className="admin-food-category">
+                      {food.category}
+                    </span>
+
+                    <h3>{food.name}</h3>
+
+                    <strong className="admin-food-price">
+                      ₹{Number(food.price).toFixed(0)}
+                    </strong>
+                  </div>
+
+                  <div className="admin-food-card-actions">
+                    <button
+                      className="admin-food-edit-button"
+                      onClick={() =>
+                        startEditing(food)
+                      }
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      className="admin-food-delete-button"
+                      onClick={() =>
+                        deleteFood(food.id)
+                      }
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
     </main>
   );
 }
