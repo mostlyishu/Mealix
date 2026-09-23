@@ -8,8 +8,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  Legend
+  ResponsiveContainer
 } from "recharts";
 
 function AdminAnalytics() {
@@ -20,17 +19,49 @@ function AdminAnalytics() {
   const [dailyAnalytics, setDailyAnalytics] = useState([]);
   const [hourlyAnalytics, setHourlyAnalytics] = useState([]);
   const [categoryAnalytics, setCategoryAnalytics] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-  fetchAnalytics();
-  fetchStats();
-  fetchDailyAnalytics();
-  fetchHourlyAnalytics();
-  fetchCategoryAnalytics();
-}, []);
+    loadAnalytics();
+  }, []);
 
-async function fetchCategoryAnalytics() {
-  try {
+  // =========================
+  // LOAD COMPLETE DASHBOARD
+  // =========================
+
+  async function loadAnalytics(isRefresh = false) {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
+    setError("");
+
+    try {
+      await Promise.all([
+        fetchAnalytics(),
+        fetchStats(),
+        fetchDailyAnalytics(),
+        fetchHourlyAnalytics(),
+        fetchCategoryAnalytics()
+      ]);
+    } catch (err) {
+      setError(
+        err.message ||
+          "Failed to load analytics dashboard."
+      );
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }
+
+  // =========================
+  // CATEGORY ANALYTICS
+  // =========================
+
+  async function fetchCategoryAnalytics() {
     const token = localStorage.getItem("token");
 
     const response = await fetch(
@@ -46,26 +77,31 @@ async function fetchCategoryAnalytics() {
 
     if (!response.ok) {
       throw new Error(
-        data.message || "Failed to fetch category analytics"
+        data.message ||
+          "Failed to fetch category analytics"
       );
     }
 
-    const formattedData = data.map((category) => ({
-      ...category,
-      total_quantity_sold: Number(
-        category.total_quantity_sold
-      ),
-      total_sales: Number(category.total_sales)
-    }));
+    const formattedData = data.map(
+      (category) => ({
+        ...category,
+        total_quantity_sold: Number(
+          category.total_quantity_sold
+        ),
+        total_sales: Number(
+          category.total_sales
+        )
+      })
+    );
 
     setCategoryAnalytics(formattedData);
-  } catch (err) {
-    console.error("Category analytics error:", err);
   }
-}
 
-async function fetchHourlyAnalytics() {
-  try {
+  // =========================
+  // HOURLY ANALYTICS
+  // =========================
+
+  async function fetchHourlyAnalytics() {
     const token = localStorage.getItem("token");
 
     const response = await fetch(
@@ -81,7 +117,8 @@ async function fetchHourlyAnalytics() {
 
     if (!response.ok) {
       throw new Error(
-        data.message || "Failed to fetch hourly analytics"
+        data.message ||
+          "Failed to fetch hourly analytics"
       );
     }
 
@@ -101,18 +138,20 @@ async function fetchHourlyAnalytics() {
       return {
         hour,
         displayHour,
-        total_orders: Number(item.total_orders)
+        total_orders: Number(
+          item.total_orders
+        )
       };
     });
 
     setHourlyAnalytics(formattedData);
-  } catch (err) {
-    console.error("Hourly analytics error:", err);
   }
-}
 
-async function fetchDailyAnalytics() {
-  try {
+  // =========================
+  // DAILY ANALYTICS
+  // =========================
+
+  async function fetchDailyAnalytics() {
     const token = localStorage.getItem("token");
 
     const response = await fetch(
@@ -128,74 +167,79 @@ async function fetchDailyAnalytics() {
 
     if (!response.ok) {
       throw new Error(
-        data.message || "Failed to fetch daily analytics"
+        data.message ||
+          "Failed to fetch daily analytics"
       );
     }
 
     const formattedData = data.map((day) => ({
       ...day,
 
-      date: new Date(day.date).toLocaleDateString(
-        "en-IN",
-        {
-          day: "2-digit",
-          month: "short",
-          timeZone: "UTC"
-        }
+      date: new Date(
+        day.date
+      ).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        timeZone: "UTC"
+      }),
+
+      total_orders: Number(
+        day.total_orders
       ),
 
-      total_orders: Number(day.total_orders),
-      total_revenue: Number(day.total_revenue)
+      total_revenue: Number(
+        day.total_revenue
+      )
     }));
 
     setDailyAnalytics(formattedData);
-  } catch (err) {
-    console.error("Daily analytics error:", err);
   }
-}
+
+  // =========================
+  // FOOD ANALYTICS
+  // =========================
 
   async function fetchAnalytics() {
-    try {
-      setLoading(true);
-      setError("");
+    const token = localStorage.getItem("token");
 
-      const token = localStorage.getItem("token");
-
-      const response = await fetch(
-        "http://localhost:5001/api/admin/analytics/foods",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+    const response = await fetch(
+      "http://localhost:5001/api/admin/analytics/foods",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Failed to fetch analytics"
-        );
       }
+    );
 
-      const formattedData = data.map((food) => ({
-  ...food,
-  total_quantity_sold: Number(
-    food.total_quantity_sold
-  ),
-  total_sales: Number(food.total_sales)
-}));
+    const data = await response.json();
 
-setFoods(formattedData);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      throw new Error(
+        data.message ||
+          "Failed to fetch analytics"
+      );
     }
+
+    const formattedData = data.map((food) => ({
+      ...food,
+
+      total_quantity_sold: Number(
+        food.total_quantity_sold
+      ),
+
+      total_sales: Number(
+        food.total_sales
+      )
+    }));
+
+    setFoods(formattedData);
   }
 
+  // =========================
+  // ADMIN STATS
+  // =========================
+
   async function fetchStats() {
-  try {
     const token = localStorage.getItem("token");
 
     const response = await fetch(
@@ -211,19 +255,22 @@ setFoods(formattedData);
 
     if (!response.ok) {
       throw new Error(
-        data.message || "Failed to fetch stats"
+        data.message ||
+          "Failed to fetch stats"
       );
     }
 
     setStats(data);
-  } catch (err) {
-    console.error("Stats error:", err);
   }
-}
+
+  // =========================
+  // CALCULATED INSIGHTS
+  // =========================
 
   const totalItemsSold = foods.reduce(
     (total, food) =>
-      total + Number(food.total_quantity_sold),
+      total +
+      Number(food.total_quantity_sold),
     0
   );
 
@@ -234,450 +281,849 @@ setFoods(formattedData);
   );
 
   const highestQuantity =
-  foods.length > 0
-    ? Math.max(
-        ...foods.map(
-          (food) => food.total_quantity_sold
+    foods.length > 0
+      ? Math.max(
+          ...foods.map(
+            (food) =>
+              food.total_quantity_sold
+          )
         )
-      )
-    : 0;
+      : 0;
 
-const mostPopularFoods = foods.filter(
-  (food) =>
-    food.total_quantity_sold === highestQuantity
-);
+  const mostPopularFoods = foods.filter(
+    (food) =>
+      food.total_quantity_sold ===
+      highestQuantity
+  );
 
-const mostPopularText =
-  mostPopularFoods.length > 0
-    ? mostPopularFoods
-        .map((food) => food.name)
-        .join(" & ")
-    : "No data";
+  const mostPopularText =
+    mostPopularFoods.length > 0
+      ? mostPopularFoods
+          .map((food) => food.name)
+          .join(" & ")
+      : "No data";
 
-    const peakHourData =
-  hourlyAnalytics.length > 0
-    ? hourlyAnalytics.reduce((peak, current) =>
-        current.total_orders > peak.total_orders
-          ? current
-          : peak
-      )
-    : null;
-
-    const highestCategoryQuantity =
-  categoryAnalytics.length > 0
-    ? Math.max(
-        ...categoryAnalytics.map(
-          (category) => category.total_quantity_sold
+  const peakHourData =
+    hourlyAnalytics.length > 0
+      ? hourlyAnalytics.reduce(
+          (peak, current) =>
+            current.total_orders >
+            peak.total_orders
+              ? current
+              : peak
         )
-      )
-    : 0;
+      : null;
 
-const topCategories = categoryAnalytics.filter(
-  (category) =>
-    category.total_quantity_sold === highestCategoryQuantity
-);
+  const highestCategoryQuantity =
+    categoryAnalytics.length > 0
+      ? Math.max(
+          ...categoryAnalytics.map(
+            (category) =>
+              category.total_quantity_sold
+          )
+        )
+      : 0;
 
-const topCategoryText =
-  topCategories.length > 0
-    ? topCategories
-        .map((category) => category.category)
-        .join(" & ")
-    : "No data";
+  const topCategories =
+    categoryAnalytics.filter(
+      (category) =>
+        category.total_quantity_sold ===
+        highestCategoryQuantity
+    );
+
+  const topCategoryText =
+    topCategories.length > 0
+      ? topCategories
+          .map(
+            (category) =>
+              category.category
+          )
+          .join(" & ")
+      : "No data";
+
+  // =========================
+  // TOOLTIP STYLE
+  // =========================
+
+  const tooltipStyle = {
+    border: "1px solid #e7e2dc",
+    borderRadius: "10px",
+    fontSize: "11px",
+    boxShadow:
+      "0 8px 25px rgba(65, 40, 25, 0.08)"
+  };
 
   return (
-    <main className="analytics-page">
-      <div className="analytics-header">
+    <main className="analytics-v2-page">
+
+      {/* HEADER */}
+
+      <section className="analytics-v2-header">
         <div>
+          <span className="analytics-v2-eyebrow">
+            BUSINESS INSIGHTS
+          </span>
+
           <h1>Canteen Analytics</h1>
+
           <p>
-            Insights from completed Mealix orders.
+            Understand sales, demand and menu
+            performance using completed Mealix
+            orders.
           </p>
         </div>
 
         <button
-          className="analytics-refresh-button"
-                  onClick={() => {
-                      fetchAnalytics();
-                      fetchStats();
-                      fetchDailyAnalytics();
-                      fetchHourlyAnalytics();
-                      fetchCategoryAnalytics();
-                  }}
+          className="analytics-v2-refresh"
+          onClick={() =>
+            loadAnalytics(true)
+          }
+          disabled={refreshing}
         >
-          Refresh
-        </button>
-      </div>
+          <span>↻</span>
 
-      {loading && (
-        <p className="analytics-message">
-          Loading analytics...
-        </p>
-      )}
+          {refreshing
+            ? "Refreshing..."
+            : "Refresh Analytics"}
+        </button>
+      </section>
+
+      {/* ERROR */}
 
       {error && (
-        <p className="analytics-error">
-          {error}
-        </p>
+        <div className="analytics-v2-error">
+          <span>!</span>
+          <p>{error}</p>
+        </div>
+      )}
+
+      {/* LOADING */}
+
+      {loading && (
+        <div className="analytics-v2-loading">
+          <div className="analytics-v2-loader"></div>
+
+          <h3>Building your dashboard...</h3>
+
+          <p>
+            Analysing completed Mealix orders.
+          </p>
+        </div>
       )}
 
       {!loading && !error && (
         <>
-          <section className="analytics-summary">
-  <div className="analytics-stat-card">
-    <span>Total Items Sold</span>
-    <strong>{totalItemsSold}</strong>
-  </div>
 
-  <div className="analytics-stat-card">
-    <span>Food Sales</span>
-    <strong>₹{totalSales.toFixed(2)}</strong>
-  </div>
+          {/* KPI SUMMARY */}
 
-  <div className="analytics-stat-card">
-    <span>Most Popular</span>
-    <strong>{mostPopularText}</strong>
-  </div>
+          <section className="analytics-v2-summary">
+            <article className="analytics-kpi-card">
+              <span>Total Items Sold</span>
 
-  <div className="analytics-stat-card">
-    <span>Average Order Value</span>
-    <strong>
-      ₹
-      {stats
-        ? Number(stats.average_order_value).toFixed(2)
-        : "0.00"}
-    </strong>
-  </div>
+              <strong>{totalItemsSold}</strong>
 
-  <div className="analytics-stat-card">
-    <span>Peak Ordering Hour</span>
-    <strong>
-      {peakHourData
-        ? peakHourData.displayHour
-        : "No data"}
-    </strong>
-  </div>
+              <small>
+                Completed order items
+              </small>
+            </article>
 
-  <div className="analytics-stat-card">
-  <span>Top Category</span>
-  <strong>{topCategoryText}</strong>
-</div>
-</section>
+            <article className="analytics-kpi-card revenue">
+              <span>Food Sales</span>
 
-          <section className="analytics-chart-section">
-  <div className="section-heading">
-    <h2>Daily Revenue Trend</h2>
+              <strong>
+                ₹{totalSales.toFixed(0)}
+              </strong>
 
-    <p>
-      Revenue generated from completed orders by day.
-    </p>
-  </div>
+              <small>
+                Completed order revenue
+              </small>
+            </article>
 
-  {dailyAnalytics.length === 0 ? (
-    <p className="analytics-message">
-      No daily sales data available yet.
-    </p>
-  ) : (
-    <div className="food-chart">
-      <ResponsiveContainer width="100%" height={320}>
-        <LineChart
-          data={dailyAnalytics}
-          margin={{
-            top: 10,
-            right: 20,
-            left: 10,
-            bottom: 10
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
+            <article className="analytics-kpi-card">
+              <span>Average Order Value</span>
 
-          <XAxis dataKey="date" />
+              <strong>
+                ₹
+                {stats
+                  ? Number(
+                      stats.average_order_value
+                    ).toFixed(0)
+                  : "0"}
+              </strong>
 
-          <YAxis />
+              <small>
+                Per completed order
+              </small>
+            </article>
 
-          <Tooltip
-            formatter={(value) => [
-              `₹${Number(value).toFixed(2)}`,
-              "Revenue"
-            ]}
-          />
+            <article className="analytics-kpi-card">
+              <span>Peak Ordering Hour</span>
 
-          <Legend />
+              <strong>
+                {peakHourData
+                  ? peakHourData.displayHour
+                  : "—"}
+              </strong>
 
-          <Line
-            type="monotone"
-            dataKey="total_revenue"
-            name="Revenue"
-            stroke="#111827"
-            strokeWidth={3}
-            activeDot={{ r: 6 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  )}
-</section>
+              <small>
+                Highest completed volume
+              </small>
+            </article>
 
-<section className="analytics-chart-section">
-  <div className="section-heading">
-    <h2>Daily Order Volume</h2>
+            <article className="analytics-kpi-card highlight">
+              <span>Most Popular</span>
 
-    <p>
-      Number of completed orders received each day.
-    </p>
-  </div>
+              <strong>
+                {mostPopularText}
+              </strong>
 
-  {dailyAnalytics.length === 0 ? (
-    <p className="analytics-message">
-      No daily order data available yet.
-    </p>
-  ) : (
-    <div className="food-chart">
-      <ResponsiveContainer width="100%" height={320}>
-        <BarChart
-          data={dailyAnalytics}
-          margin={{
-            top: 10,
-            right: 20,
-            left: 0,
-            bottom: 10
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
+              <small>
+                By quantity sold
+              </small>
+            </article>
 
-          <XAxis dataKey="date" />
+            <article className="analytics-kpi-card">
+              <span>Top Category</span>
 
-          <YAxis allowDecimals={false} />
+              <strong>
+                {topCategoryText}
+              </strong>
 
-          <Tooltip />
+              <small>
+                By quantity sold
+              </small>
+            </article>
+          </section>
 
-          <Bar
-            dataKey="total_orders"
-            name="Completed Orders"
-            fill="#111827"
-            radius={[6, 6, 0, 0]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  )}
-</section>
+          {/* REVENUE & ORDER TRENDS */}
 
-<section className="analytics-chart-section">
-  <div className="section-heading">
-    <h2>Peak Ordering Hours</h2>
+          <section className="analytics-v2-group">
+            <div className="analytics-v2-group-heading">
+              <div>
+                <span>PERFORMANCE</span>
 
-    <p>
-      Completed orders grouped by the hour they were placed.
-    </p>
-  </div>
+                <h2>
+                  Revenue & Order Trends
+                </h2>
 
-  {hourlyAnalytics.length === 0 ? (
-    <p className="analytics-message">
-      No hourly order data available yet.
-    </p>
-  ) : (
-    <div className="food-chart">
-      <ResponsiveContainer width="100%" height={320}>
-        <BarChart
-          data={hourlyAnalytics}
-          margin={{
-            top: 10,
-            right: 20,
-            left: 0,
-            bottom: 10
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
+                <p>
+                  Track how completed sales change
+                  over time.
+                </p>
+              </div>
+            </div>
 
-          <XAxis dataKey="displayHour" />
+            <div className="analytics-chart-grid">
 
-          <YAxis allowDecimals={false} />
+              {/* DAILY REVENUE */}
 
-          <Tooltip />
+              <article className="analytics-v2-chart-card">
+                <div className="analytics-chart-heading">
+                  <div>
+                    <h3>
+                      Daily Revenue
+                    </h3>
 
-          <Bar
-            dataKey="total_orders"
-            name="Completed Orders"
-            fill="#111827"
-            radius={[6, 6, 0, 0]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  )}
-</section>
+                    <p>
+                      Revenue generated from
+                      completed orders.
+                    </p>
+                  </div>
 
-<section className="analytics-chart-section">
-  <div className="section-heading">
-    <h2>Category Performance</h2>
+                  <span>₹</span>
+                </div>
 
-    <p>
-      Quantity sold across different food categories.
-    </p>
-  </div>
+                {dailyAnalytics.length === 0 ? (
+                  <div className="analytics-chart-empty">
+                    No daily revenue data yet.
+                  </div>
+                ) : (
+                  <div className="analytics-v2-chart">
+                    <ResponsiveContainer
+                      width="100%"
+                      height={280}
+                    >
+                      <LineChart
+                        data={dailyAnalytics}
+                        margin={{
+                          top: 10,
+                          right: 15,
+                          left: 5,
+                          bottom: 5
+                        }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="#eee9e4"
+                        />
 
-  {categoryAnalytics.length === 0 ? (
-    <p className="analytics-message">
-      No category sales data available yet.
-    </p>
-  ) : (
-    <div className="food-chart">
-      <ResponsiveContainer width="100%" height={320}>
-        <BarChart
-          data={categoryAnalytics}
-          margin={{
-            top: 10,
-            right: 20,
-            left: 0,
-            bottom: 10
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis
+                          dataKey="date"
+                          tick={{
+                            fontSize: 10,
+                            fill: "#78716c"
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
 
-          <XAxis dataKey="category" />
+                        <YAxis
+                          tick={{
+                            fontSize: 10,
+                            fill: "#78716c"
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
 
-          <YAxis allowDecimals={false} />
+                        <Tooltip
+                          contentStyle={
+                            tooltipStyle
+                          }
+                          formatter={(value) => [
+                            `₹${Number(
+                              value
+                            ).toFixed(2)}`,
+                            "Revenue"
+                          ]}
+                        />
 
-          <Tooltip />
+                        <Line
+                          type="monotone"
+                          dataKey="total_revenue"
+                          name="Revenue"
+                          stroke="#e35336"
+                          strokeWidth={3}
+                          dot={{
+                            r: 3,
+                            fill: "#e35336"
+                          }}
+                          activeDot={{ r: 5 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </article>
 
-          <Bar
-            dataKey="total_quantity_sold"
-            name="Quantity Sold"
-            fill="#111827"
-            radius={[6, 6, 0, 0]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  )}
-</section>
+              {/* DAILY ORDERS */}
 
-                  <section className="analytics-chart-section">
-                      <div className="section-heading">
-                          <h2>Food Popularity</h2>
+              <article className="analytics-v2-chart-card">
+                <div className="analytics-chart-heading">
+                  <div>
+                    <h3>
+                      Daily Order Volume
+                    </h3>
 
-                          <p>
-                              Quantity sold from completed orders.
-                          </p>
-                      </div>
+                    <p>
+                      Completed orders received
+                      each day.
+                    </p>
+                  </div>
 
-                      {foods.length === 0 ? (
-                          <p className="analytics-message">
-                              No sales data available yet.
-                          </p>
-                      ) : (
-                          <div className="food-chart">
-                              <ResponsiveContainer width="100%" height={320}>
-                                  <BarChart
-                                      data={foods}
-                                      margin={{
-                                          top: 10,
-                                          right: 20,
-                                          left: 0,
-                                          bottom: 30
-                                      }}
-                                  >
-                                      <CartesianGrid strokeDasharray="3 3" />
+                  <span>#</span>
+                </div>
 
-                                      <XAxis
-                                          dataKey="name"
-                                          angle={-15}
-                                          textAnchor="end"
-                                          interval={0}
-                                          height={70}
-                                      />
+                {dailyAnalytics.length === 0 ? (
+                  <div className="analytics-chart-empty">
+                    No daily order data yet.
+                  </div>
+                ) : (
+                  <div className="analytics-v2-chart">
+                    <ResponsiveContainer
+                      width="100%"
+                      height={280}
+                    >
+                      <BarChart
+                        data={dailyAnalytics}
+                        margin={{
+                          top: 10,
+                          right: 15,
+                          left: 0,
+                          bottom: 5
+                        }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="#eee9e4"
+                        />
 
-                                      <YAxis
-                                          allowDecimals={false}
-                                      />
+                        <XAxis
+                          dataKey="date"
+                          tick={{
+                            fontSize: 10,
+                            fill: "#78716c"
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
 
-                                      <Tooltip />
+                        <YAxis
+                          allowDecimals={false}
+                          tick={{
+                            fontSize: 10,
+                            fill: "#78716c"
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
 
-                                      <Bar
-                                          dataKey="total_quantity_sold"
-                                          name="Quantity Sold"
-                                          fill="#111827"
-                                          radius={[6, 6, 0, 0]}
-                                      />
-                                  </BarChart>
-                              </ResponsiveContainer>
-                          </div>
-                      )}
-                  </section>
+                        <Tooltip
+                          contentStyle={
+                            tooltipStyle
+                          }
+                        />
 
-                  <section className="analytics-chart-section">
-  <div className="section-heading">
-    <h2>Food Sales</h2>
+                        <Bar
+                          dataKey="total_orders"
+                          name="Completed Orders"
+                          fill="#e35336"
+                          radius={[
+                            6,
+                            6,
+                            0,
+                            0
+                          ]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </article>
 
-    <p>
-      Sales generated by each food from completed orders.
-    </p>
-  </div>
+            </div>
+          </section>
 
-  {foods.length === 0 ? (
-    <p className="analytics-message">
-      No sales data available yet.
-    </p>
-  ) : (
-    <div className="food-chart">
-      <ResponsiveContainer width="100%" height={320}>
-        <BarChart
-          data={foods}
-          margin={{
-            top: 10,
-            right: 20,
-            left: 10,
-            bottom: 30
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
+          {/* DEMAND PATTERNS */}
 
-          <XAxis
-            dataKey="name"
-            angle={-15}
-            textAnchor="end"
-            interval={0}
-            height={70}
-          />
+          <section className="analytics-v2-group">
+            <div className="analytics-v2-group-heading">
+              <div>
+                <span>DEMAND</span>
 
-          <YAxis />
+                <h2>
+                  Ordering Patterns
+                </h2>
 
-          <Tooltip
-            formatter={(value) => [
-              `₹${Number(value).toFixed(2)}`,
-              "Sales"
-            ]}
-          />
+                <p>
+                  See when students order and
+                  which categories perform best.
+                </p>
+              </div>
+            </div>
 
-          <Bar
-            dataKey="total_sales"
-            name="Sales"
-            fill="#111827"
-            radius={[6, 6, 0, 0]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  )}
-</section>
+            <div className="analytics-chart-grid">
 
-          <section className="food-performance-section">
-            <div className="section-heading">
-              <h2>Food Performance</h2>
+              {/* PEAK HOURS */}
 
-              <p>
-                Ranked by quantity sold from completed
-                orders.
-              </p>
+              <article className="analytics-v2-chart-card">
+                <div className="analytics-chart-heading">
+                  <div>
+                    <h3>
+                      Peak Ordering Hours
+                    </h3>
+
+                    <p>
+                      Completed orders grouped
+                      by ordering hour.
+                    </p>
+                  </div>
+
+                  <span>◷</span>
+                </div>
+
+                {hourlyAnalytics.length === 0 ? (
+                  <div className="analytics-chart-empty">
+                    No hourly order data yet.
+                  </div>
+                ) : (
+                  <div className="analytics-v2-chart">
+                    <ResponsiveContainer
+                      width="100%"
+                      height={280}
+                    >
+                      <BarChart
+                        data={hourlyAnalytics}
+                        margin={{
+                          top: 10,
+                          right: 15,
+                          left: 0,
+                          bottom: 5
+                        }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="#eee9e4"
+                        />
+
+                        <XAxis
+                          dataKey="displayHour"
+                          tick={{
+                            fontSize: 9,
+                            fill: "#78716c"
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+
+                        <YAxis
+                          allowDecimals={false}
+                          tick={{
+                            fontSize: 10,
+                            fill: "#78716c"
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+
+                        <Tooltip
+                          contentStyle={
+                            tooltipStyle
+                          }
+                        />
+
+                        <Bar
+                          dataKey="total_orders"
+                          name="Completed Orders"
+                          fill="#f4a460"
+                          radius={[
+                            6,
+                            6,
+                            0,
+                            0
+                          ]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </article>
+
+              {/* CATEGORY PERFORMANCE */}
+
+              <article className="analytics-v2-chart-card">
+                <div className="analytics-chart-heading">
+                  <div>
+                    <h3>
+                      Category Performance
+                    </h3>
+
+                    <p>
+                      Quantity sold across menu
+                      categories.
+                    </p>
+                  </div>
+
+                  <span>▦</span>
+                </div>
+
+                {categoryAnalytics.length === 0 ? (
+                  <div className="analytics-chart-empty">
+                    No category data yet.
+                  </div>
+                ) : (
+                  <div className="analytics-v2-chart">
+                    <ResponsiveContainer
+                      width="100%"
+                      height={280}
+                    >
+                      <BarChart
+                        data={categoryAnalytics}
+                        margin={{
+                          top: 10,
+                          right: 15,
+                          left: 0,
+                          bottom: 5
+                        }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="#eee9e4"
+                        />
+
+                        <XAxis
+                          dataKey="category"
+                          tick={{
+                            fontSize: 9,
+                            fill: "#78716c"
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+
+                        <YAxis
+                          allowDecimals={false}
+                          tick={{
+                            fontSize: 10,
+                            fill: "#78716c"
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+
+                        <Tooltip
+                          contentStyle={
+                            tooltipStyle
+                          }
+                        />
+
+                        <Bar
+                          dataKey="total_quantity_sold"
+                          name="Quantity Sold"
+                          fill="#a0522d"
+                          radius={[
+                            6,
+                            6,
+                            0,
+                            0
+                          ]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </article>
+
+            </div>
+          </section>
+
+          {/* MENU PERFORMANCE */}
+
+          <section className="analytics-v2-group">
+            <div className="analytics-v2-group-heading">
+              <div>
+                <span>MENU INSIGHTS</span>
+
+                <h2>
+                  Food Performance
+                </h2>
+
+                <p>
+                  Compare popularity and sales
+                  across individual menu items.
+                </p>
+              </div>
+            </div>
+
+            <div className="analytics-chart-grid">
+
+              {/* POPULARITY */}
+
+              <article className="analytics-v2-chart-card">
+                <div className="analytics-chart-heading">
+                  <div>
+                    <h3>Food Popularity</h3>
+
+                    <p>
+                      Quantity sold from completed
+                      orders.
+                    </p>
+                  </div>
+
+                  <span>★</span>
+                </div>
+
+                {foods.length === 0 ? (
+                  <div className="analytics-chart-empty">
+                    No food sales data yet.
+                  </div>
+                ) : (
+                  <div className="analytics-v2-chart">
+                    <ResponsiveContainer
+                      width="100%"
+                      height={300}
+                    >
+                      <BarChart
+                        data={foods}
+                        margin={{
+                          top: 10,
+                          right: 15,
+                          left: 0,
+                          bottom: 45
+                        }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="#eee9e4"
+                        />
+
+                        <XAxis
+                          dataKey="name"
+                          angle={-18}
+                          textAnchor="end"
+                          interval={0}
+                          height={65}
+                          tick={{
+                            fontSize: 9,
+                            fill: "#78716c"
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+
+                        <YAxis
+                          allowDecimals={false}
+                          tick={{
+                            fontSize: 10,
+                            fill: "#78716c"
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+
+                        <Tooltip
+                          contentStyle={
+                            tooltipStyle
+                          }
+                        />
+
+                        <Bar
+                          dataKey="total_quantity_sold"
+                          name="Quantity Sold"
+                          fill="#e35336"
+                          radius={[
+                            6,
+                            6,
+                            0,
+                            0
+                          ]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </article>
+
+              {/* SALES */}
+
+              <article className="analytics-v2-chart-card">
+                <div className="analytics-chart-heading">
+                  <div>
+                    <h3>Food Sales</h3>
+
+                    <p>
+                      Revenue generated by each
+                      food.
+                    </p>
+                  </div>
+
+                  <span>₹</span>
+                </div>
+
+                {foods.length === 0 ? (
+                  <div className="analytics-chart-empty">
+                    No food sales data yet.
+                  </div>
+                ) : (
+                  <div className="analytics-v2-chart">
+                    <ResponsiveContainer
+                      width="100%"
+                      height={300}
+                    >
+                      <BarChart
+                        data={foods}
+                        margin={{
+                          top: 10,
+                          right: 15,
+                          left: 5,
+                          bottom: 45
+                        }}
+                      >
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="#eee9e4"
+                        />
+
+                        <XAxis
+                          dataKey="name"
+                          angle={-18}
+                          textAnchor="end"
+                          interval={0}
+                          height={65}
+                          tick={{
+                            fontSize: 9,
+                            fill: "#78716c"
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+
+                        <YAxis
+                          tick={{
+                            fontSize: 10,
+                            fill: "#78716c"
+                          }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+
+                        <Tooltip
+                          contentStyle={
+                            tooltipStyle
+                          }
+                          formatter={(value) => [
+                            `₹${Number(
+                              value
+                            ).toFixed(2)}`,
+                            "Sales"
+                          ]}
+                        />
+
+                        <Bar
+                          dataKey="total_sales"
+                          name="Sales"
+                          fill="#a0522d"
+                          radius={[
+                            6,
+                            6,
+                            0,
+                            0
+                          ]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </article>
+
+            </div>
+          </section>
+
+          {/* PERFORMANCE TABLE */}
+
+          <section className="analytics-v2-table-section">
+            <div className="analytics-v2-group-heading">
+              <div>
+                <span>DETAILED VIEW</span>
+
+                <h2>
+                  Menu Performance
+                </h2>
+
+                <p>
+                  Food-level results from completed
+                  Mealix orders.
+                </p>
+              </div>
+
+              <span className="analytics-record-count">
+                {foods.length} foods
+              </span>
             </div>
 
             {foods.length === 0 ? (
-              <p className="analytics-message">
-                No completed order data available yet.
-              </p>
+              <div className="analytics-chart-empty">
+                No completed order data yet.
+              </div>
             ) : (
-              <div className="analytics-table-wrapper">
-                <table className="analytics-table">
+              <div className="analytics-v2-table-wrapper">
+                <table className="analytics-v2-table">
                   <thead>
                     <tr>
                       <th>Rank</th>
@@ -689,33 +1135,50 @@ const topCategoryText =
                   </thead>
 
                   <tbody>
-                    {foods.map((food, index) => (
-                      <tr key={food.id}>
-                        <td>#{index + 1}</td>
+                    {foods.map(
+                      (food, index) => (
+                        <tr key={food.id}>
+                          <td>
+                            <span className="analytics-rank">
+                              #{index + 1}
+                            </span>
+                          </td>
 
-                        <td>
-                          <strong>{food.name}</strong>
-                        </td>
+                          <td>
+                            <strong>
+                              {food.name}
+                            </strong>
+                          </td>
 
-                        <td>{food.category}</td>
+                          <td>
+                            <span className="analytics-category-badge">
+                              {food.category}
+                            </span>
+                          </td>
 
-                        <td>
-                          {food.total_quantity_sold}
-                        </td>
+                          <td>
+                            {
+                              food.total_quantity_sold
+                            }
+                          </td>
 
-                        <td>
-                          ₹
-                          {Number(
-                            food.total_sales
-                          ).toFixed(2)}
-                        </td>
-                      </tr>
-                    ))}
+                          <td>
+                            <strong>
+                              ₹
+                              {Number(
+                                food.total_sales
+                              ).toFixed(2)}
+                            </strong>
+                          </td>
+                        </tr>
+                      )
+                    )}
                   </tbody>
                 </table>
               </div>
             )}
           </section>
+
         </>
       )}
     </main>
