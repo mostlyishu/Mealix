@@ -3777,231 +3777,415 @@ main {
 }
 
 /* =========================
-   ORDER SUCCESS PAGE
+   ORDER SUCCESS PAGE V2
    ========================= */
 
 .order-success-page {
-  max-width: 700px;
-  margin: auto;
-  padding: 60px 20px;
-}
+  max-width: none;
 
-.order-success-card {
-  background: white;
-  padding: 45px 35px;
-  border-radius: 18px;
-  text-align: center;
-
-  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.07);
-}
-
-.success-icon {
-  width: 60px;
-  height: 60px;
-
-  margin: 0 auto 20px;
+  min-height: calc(100vh - 74px);
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  border-radius: 50%;
+  padding: 55px 24px 75px;
 
-  background: #222;
-  color: white;
-
-  font-size: 28px;
-  font-weight: bold;
+  background:
+    radial-gradient(
+      circle at 50% 15%,
+      rgba(245, 245, 220, 0.75),
+      transparent 34%
+    ),
+    var(--background);
 }
 
-.order-success-card h1 {
-  margin: 0 0 10px;
-  font-size: 30px;
+.order-success-card {
+  width: 100%;
+  max-width: 720px;
+
+  padding: 45px 48px;
+
+  border: 1px solid var(--border);
+  border-radius: 24px;
+
+  background: var(--surface);
+
+  text-align: center;
+
+  box-shadow:
+    0 18px 55px rgba(65, 40, 25, 0.08);
+}
+
+
+/* =========================
+   SUCCESS HEADING
+   ========================= */
+
+.success-icon {
+  width: 62px;
+  height: 62px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto 18px;
+
+  border-radius: 50%;
+
+  background: #edf9f0;
+  color: var(--success);
+
+  font-size: 28px;
+  font-weight: 800;
+
+  box-shadow:
+    0 0 0 8px rgba(21, 128, 61, 0.06);
+}
+
+.success-eyebrow {
+  display: block;
+
+  margin-bottom: 9px;
+
+  color: var(--primary);
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 1.3px;
+}
+
+.order-success-card > h1 {
+  margin: 0;
+
+  color: var(--text-primary);
+
+  font-size: 34px;
+  line-height: 1.1;
+
+  letter-spacing: -1.2px;
 }
 
 .success-message {
-  color: #666;
-  margin-bottom: 15px;
-}
+  max-width: 500px;
 
-.success-order-id {
-  font-weight: bold;
-  margin-bottom: 25px;
-}
+  margin: 13px auto 0;
 
-
-/* Pickup Token */
-
-.pickup-token-box {
-  margin: 30px auto;
-
-  padding: 25px;
-
-  max-width: 400px;
-
-  background: #f5f5f5;
-
-  border: 2px dashed #bbb;
-  border-radius: 14px;
-}
-
-.pickup-token-box span {
-  display: block;
-
-  margin-bottom: 10px;
-
-  color: #666;
+  color: var(--text-secondary);
 
   font-size: 13px;
-  text-transform: uppercase;
+  line-height: 1.65;
+}
+
+
+/* =========================
+   ORDER REFERENCE
+   ========================= */
+
+.success-order-reference {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 8px;
+
+  margin-top: 23px;
+  padding: 8px 13px;
+
+  border: 1px solid var(--border);
+  border-radius: 999px;
+
+  background: var(--surface-warm);
+}
+
+.success-order-reference span {
+  color: var(--text-secondary);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  letter-spacing: 0.8px;
+}
+
+.success-order-reference strong {
+  color: var(--text-primary);
+
+  font-size: 12px;
+}
+
+
+/* =========================
+   PICKUP TOKEN
+   ========================= */
+
+.pickup-token-box {
+  margin-top: 25px;
+  padding: 24px;
+
+  border: 1px solid #f1c8b9;
+  border-radius: 17px;
+
+  background:
+    linear-gradient(
+      145deg,
+      #fff8f4,
+      #fff1ea
+    );
+}
+
+.pickup-token-label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: var(--primary-dark);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 1.2px;
+}
+
+.pickup-token-box > strong {
+  display: block;
+
+  color: var(--primary);
+
+  font-size: 31px;
+  line-height: 1.1;
+
   letter-spacing: 1px;
 }
 
-.pickup-token-box strong {
+.pickup-token-box > p {
+  margin: 8px 0 0;
+
+  color: var(--text-secondary);
+
+  font-size: 11px;
+}
+
+
+/* =========================
+   WHAT HAPPENS NEXT
+   ========================= */
+
+.success-next-section {
+  margin-top: 31px;
+
+  text-align: left;
+}
+
+.success-next-label {
   display: block;
 
-  font-size: 34px;
-  letter-spacing: 3px;
+  margin-bottom: 15px;
 
-  margin-bottom: 10px;
+  color: var(--text-secondary);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 1.1px;
 }
 
-.pickup-token-box p {
-  margin: 0;
+.success-steps {
+  display: grid;
 
-  color: #777;
-  font-size: 13px;
+  grid-template-columns:
+    1fr 35px 1fr 35px 1fr;
+
+  align-items: start;
+}
+
+.success-step {
+  text-align: center;
+}
+
+.success-step-icon {
+  width: 32px;
+  height: 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto 10px;
+
+  border: 1px solid #f0c8b8;
+  border-radius: 50%;
+
+  background: var(--primary-soft);
+  color: var(--primary);
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.success-step strong {
+  display: block;
+
+  color: var(--text-primary);
+
+  font-size: 11px;
+}
+
+.success-step p {
+  margin: 5px 0 0;
+
+  color: var(--text-secondary);
+
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.success-step-line {
+  height: 1px;
+
+  margin-top: 16px;
+
+  background: var(--border);
 }
 
 
-/* Buttons */
+/* =========================
+   SUCCESS ACTIONS
+   ========================= */
 
 .success-actions {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
+  display: grid;
 
-  margin-top: 25px;
+  grid-template-columns: 1fr 1fr;
+
+  gap: 11px;
+
+  margin-top: 31px;
 }
 
 .track-order-button,
 .order-more-button {
-  padding: 11px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-  border-radius: 8px;
+  gap: 8px;
 
-  font-size: 14px;
+  padding: 12px 17px;
+
+  border-radius: 10px;
+
+  text-decoration: none;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  transition: var(--transition);
 }
 
 .track-order-button {
-  border: none;
-
-  background: #222;
+  background: var(--primary);
   color: white;
+
+  box-shadow:
+    0 7px 18px rgba(227, 83, 54, 0.18);
 }
 
 .track-order-button:hover {
-  background: #444;
+  background: var(--primary-hover);
+
+  transform: translateY(-1px);
 }
 
 .order-more-button {
-  background: white;
+  border: 1px solid var(--border);
 
-  border: 1px solid #ddd;
+  background: var(--surface);
+  color: var(--text-primary);
 }
 
 .order-more-button:hover {
-  background: #f5f5f5;
+  border-color: #dccbc2;
+
+  background: var(--surface-warm);
+
+  transform: translateY(-1px);
+}
+
+.success-footer-note {
+  margin: 17px 0 0;
+
+  color: var(--text-muted);
+
+  font-size: 9px;
 }
 
 
-/* Mobile */
+/* =========================
+   ORDER SUCCESS RESPONSIVE
+   ========================= */
 
-@media (max-width: 500px) {
+@media (max-width: 650px) {
+  .order-success-page {
+    align-items: flex-start;
+
+    padding: 30px 15px 55px;
+  }
+
   .order-success-card {
-    padding: 35px 20px;
+    padding: 35px 24px;
+
+    border-radius: 19px;
   }
 
-  .order-success-card h1 {
-    font-size: 25px;
+  .order-success-card > h1 {
+    font-size: 29px;
   }
 
-  .pickup-token-box strong {
-    font-size: 28px;
+  .success-steps {
+    display: flex;
+    flex-direction: column;
+
+    gap: 16px;
+  }
+
+  .success-step {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    text-align: left;
+  }
+
+  .success-step-icon {
+    flex-shrink: 0;
+
+    margin: 0;
+  }
+
+  .success-step-line {
+    width: 1px;
+    height: 17px;
+
+    margin: -8px 0 -8px 15px;
   }
 
   .success-actions {
-    flex-direction: column;
-  }
-
-  .success-actions a {
-    width: 100%;
-  }
-
-  .success-actions button {
-    width: 100%;
+    grid-template-columns: 1fr;
   }
 }
 
-/* Pickup token inside My Orders */
+@media (max-width: 400px) {
+  .order-success-card {
+    padding: 30px 18px;
+  }
 
-.order-pickup-token {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-
-  margin-bottom: 30px;
-  padding: 10px 15px;
-
-  background: #f5f5f5;
-  border: 1px dashed #bbb;
-  border-radius: 9px;
-}
-
-.order-pickup-token span {
-  color: #777;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.order-pickup-token strong {
-  font-size: 18px;
-  letter-spacing: 1px;
-}
-
-.estimated-pickup {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  margin-bottom: 25px;
-}
-
-.estimated-pickup span {
-  color: #777;
-  font-size: 13px;
-}
-
-.estimated-pickup strong {
-  font-size: 16px;
-}
-
-.queue-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  margin-bottom: 25px;
-}
-
-.queue-info span {
-  color: #777;
-  font-size: 13px;
-}
-
-.queue-info strong {
-  font-size: 16px;
+  .pickup-token-box > strong {
+    font-size: 27px;
+  }
 }
 
 /* =========================
