@@ -175,13 +175,20 @@ function AdminAnalytics() {
     const formattedData = data.map((day) => ({
       ...day,
 
-      date: new Date(
-        day.date
-      ).toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        timeZone: "UTC"
-      }),
+      date: (() => {
+  const [year, month, dayNumber] = day.date
+    .split("-")
+    .map(Number);
+
+  return new Date(
+    year,
+    month - 1,
+    dayNumber
+  ).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short"
+  });
+})(),
 
       total_orders: Number(
         day.total_orders

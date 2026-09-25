@@ -752,7 +752,7 @@ app.get(
   (req, res) => {
     const sql = `
       SELECT
-        DATE(created_at) AS date,
+        DATE_FORMAT(created_at, '%Y-%m-%d') AS date,
 
         COUNT(id) AS total_orders,
 
@@ -765,9 +765,9 @@ app.get(
 
       WHERE status = 'Completed'
 
-      GROUP BY DATE(created_at)
+      GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d')
 
-      ORDER BY DATE(created_at) ASC
+ORDER BY DATE_FORMAT(created_at, '%Y-%m-%d') ASC
     `;
 
     db.query(sql, (err, results) => {
