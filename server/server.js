@@ -474,8 +474,8 @@ app.get("/api/orders", authMiddleware, (req, res) => {
       orders.status,
       orders.created_at,
       foods.name AS food_name,
-      foods.price,
-      order_items.quantity
+order_items.unit_price AS price,
+order_items.quantity
     FROM orders
     JOIN order_items
       ON orders.id = order_items.order_id
@@ -574,8 +574,8 @@ app.get(
         orders.status,
         orders.created_at,
         foods.name AS food_name,
-        foods.price,
-        order_items.quantity
+order_items.unit_price AS price,
+order_items.quantity
       FROM orders
       JOIN users
         ON orders.user_id = users.id
