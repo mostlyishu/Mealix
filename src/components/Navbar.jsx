@@ -1,9 +1,11 @@
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import mealixLogo from "../assets/brand/mealix-logo.png";
+import { useCart } from "../context/CartContext";
 
 function Navbar() {
   const { user, logout, isLoggedIn } = useAuth();
+  const { totalCartItems } = useCart();
 
   const getNavClass = ({ isActive }) =>
     isActive ? "nav-link active" : "nav-link";
@@ -33,9 +35,18 @@ function Navbar() {
           </NavLink>
         )}
 
-        <NavLink to="/cart" className={getNavClass}>
-          Cart
-        </NavLink>
+              <NavLink
+                  to="/cart"
+                  className={getNavClass}
+              >
+                  Cart
+
+                  {totalCartItems > 0 && (
+                      <span className="nav-cart-badge">
+                          {totalCartItems}
+                      </span>
+                  )}
+              </NavLink>
 
         {isLoggedIn && user?.role === "admin" && (
           <>

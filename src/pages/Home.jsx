@@ -34,12 +34,12 @@ function Home() {
               <span>→</span>
             </Link>
 
-            <Link
-              to="/menu"
-              className="home-secondary-button"
-            >
-              View Menu
-            </Link>
+                      <Link
+                          to="/orders"
+                          className="home-secondary-button"
+                      >
+                          Track Order
+                      </Link>
           </div>
         </div>
 

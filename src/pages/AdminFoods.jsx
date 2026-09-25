@@ -5,8 +5,11 @@ function AdminFoods() {
 
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
-  const [category, setCategory] = useState("");
-  const [available, setAvailable] = useState(true);
+    const [category, setCategory] = useState("");
+    const [newCategory, setNewCategory] = useState("");
+    const [isAddingCategory, setIsAddingCategory] = useState(false);
+
+    const [available, setAvailable] = useState(true);
 
   const [editingId, setEditingId] = useState(null);
 
@@ -42,13 +45,15 @@ function AdminFoods() {
     }
   }
 
-  function resetForm() {
-    setName("");
-    setPrice("");
-    setCategory("");
-    setAvailable(true);
-    setEditingId(null);
-  }
+function resetForm() {
+  setName("");
+  setPrice("");
+  setCategory("");
+  setNewCategory("");
+  setIsAddingCategory(false);
+  setAvailable(true);
+  setEditingId(null);
+}
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -56,6 +61,14 @@ function AdminFoods() {
     setError("");
     setMessage("");
     setSaving(true);
+      const finalCategory = isAddingCategory
+          ? newCategory.trim()
+          : category;
+
+      if (!finalCategory) {
+          setError("Please select or add a category.");
+          return;
+      }
 
     const token = localStorage.getItem("token");
 
@@ -75,7 +88,7 @@ function AdminFoods() {
         body: JSON.stringify({
           name,
           price,
-          category,
+          category: finalCategory,
           available
         })
       });
@@ -105,8 +118,11 @@ function AdminFoods() {
     setEditingId(food.id);
     setName(food.name);
     setPrice(food.price);
-    setCategory(food.category);
-    setAvailable(Number(food.available) === 1);
+      setCategory(food.category);
+      setNewCategory("");
+      setIsAddingCategory(false);
+
+      setAvailable(Number(food.available) === 1);
 
     setMessage("");
     setError("");
@@ -155,6 +171,13 @@ function AdminFoods() {
       setError(error.message);
     }
   }
+    const categories = [
+        ...new Set(
+            foods
+                .map((food) => food.category?.trim())
+                .filter(Boolean)
+        )
+    ].sort();
 
   const availableFoods = foods.filter(
     (food) => Number(food.available) === 1
@@ -282,22 +305,68 @@ function AdminFoods() {
             />
           </div>
 
-          <div className="food-form-field">
-            <label htmlFor="food-category">
-              Category
-            </label>
+                  <div className="food-form-field">
+                      <label htmlFor="food-category">
+                          Category
+                      </label>
 
-            <input
-              id="food-category"
-              type="text"
-              placeholder="e.g. Burger"
-              value={category}
-              onChange={(event) =>
-                setCategory(event.target.value)
-              }
-              required
-            />
-          </div>
+                      {!isAddingCategory ? (
+                          <select
+                              id="food-category"
+                              value={category}
+                              onChange={(event) => {
+                                  const value = event.target.value;
+
+                                  if (value === "__new__") {
+                                      setIsAddingCategory(true);
+                                      setCategory("");
+                                      setNewCategory("");
+                                  } else {
+                                      setCategory(value);
+                                  }
+                              }}
+                              required
+                          >
+                              <option value="">
+                                  Select category
+                              </option>
+
+                              {categories.map((item) => (
+                                  <option key={item} value={item}>
+                                      {item}
+                                  </option>
+                              ))}
+
+                              <option value="__new__">
+                                  + Add new category
+                              </option>
+                          </select>
+                      ) : (
+                          <div className="new-category-input">
+                              <input
+                                  id="food-category"
+                                  type="text"
+                                  placeholder="e.g. Pizza"
+                                  value={newCategory}
+                                  onChange={(event) =>
+                                      setNewCategory(event.target.value)
+                                  }
+                                  autoFocus
+                                  required
+                              />
+
+                              <button
+                                  type="button"
+                                  onClick={() => {
+                                      setIsAddingCategory(false);
+                                      setNewCategory("");
+                                  }}
+                              >
+                                  Cancel
+                              </button>
+                          </div>
+                      )}
+                  </div>
 
           <div className="food-form-field">
             <label htmlFor="food-price">

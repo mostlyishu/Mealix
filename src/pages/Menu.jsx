@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import FoodCard from "../components/FoodCard";
 import { useCart } from "../context/CartContext";
 
 function Menu() {
-  const { addToCart } = useCart();
+  const {
+  cart,
+  addToCart,
+  increaseQuantity,
+  decreaseQuantity,
+  totalCartItems
+} = useCart();
 
   const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] =
@@ -50,6 +58,7 @@ function Menu() {
 
     return matchesSearch && matchesCategory;
   });
+
 
   return (
     <main className="menu-page">
@@ -207,18 +216,56 @@ function Menu() {
         !error &&
         filteredFoods.length > 0 && (
           <section className="food-grid">
-            {filteredFoods.map((food) => (
-              <FoodCard
-                key={food.id}
-                name={food.name}
-                price={food.price}
-                category={food.category}
-                available={food.available}
-                onAdd={() => addToCart(food)}
-              />
-            ))}
+                  {filteredFoods.map((food) => {
+                      const cartItem = cart.find(
+                          (item) => item.id === food.id
+                      );
+
+                      return (
+                          <FoodCard
+                              key={food.id}
+                              id={food.id}
+                              name={food.name}
+                              price={food.price}
+                              category={food.category}
+                              available={Number(food.available) === 1}
+                              quantity={cartItem?.quantity || 0}
+                              onAdd={() => addToCart(food)}
+                              onIncrease={increaseQuantity}
+                              onDecrease={decreaseQuantity}
+                          />
+                      );
+                  })}
           </section>
         )}
+      {totalCartItems > 0 && (
+  <div className="menu-cart-popup">
+    <div className="menu-cart-popup-info">
+      <div className="menu-cart-popup-icon">
+        🛒
+      </div>
+
+      <div>
+        <strong>
+          {totalCartItems}{" "}
+          {totalCartItems === 1 ? "item" : "items"} in your cart
+        </strong>
+
+        <span>
+          Your campus meal is waiting
+        </span>
+      </div>
+    </div>
+
+    <Link
+      to="/cart"
+      className="menu-cart-popup-button"
+    >
+      Go to Cart
+      <span>→</span>
+    </Link>
+  </div>
+)}
 
     </main>
   );

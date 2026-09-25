@@ -1,9 +1,13 @@
 function FoodCard({
+  id,
   name,
   price,
   category,
   available,
-  onAdd
+  quantity,
+  onAdd,
+  onIncrease,
+  onDecrease
 }) {
   const getFoodEmoji = () => {
     const foodName = name.toLowerCase();
@@ -50,13 +54,41 @@ function FoodCard({
             ₹{Number(price).toFixed(0)}
           </div>
 
-          <button
-            className="food-add-button"
-            onClick={onAdd}
-            disabled={!available}
-          >
-            {available ? "+ Add" : "Unavailable"}
-          </button>
+          {!available ? (
+            <button
+              className="food-add-button"
+              disabled
+            >
+              Unavailable
+            </button>
+          ) : quantity > 0 ? (
+            <div className="food-quantity-control">
+              <button
+                type="button"
+                onClick={() => onDecrease(id)}
+                aria-label={`Decrease ${name}`}
+              >
+                −
+              </button>
+
+              <span>{quantity}</span>
+
+              <button
+                type="button"
+                onClick={() => onIncrease(id)}
+                aria-label={`Increase ${name}`}
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            <button
+              className="food-add-button"
+              onClick={onAdd}
+            >
+              + Add
+            </button>
+          )}
         </div>
       </div>
     </article>

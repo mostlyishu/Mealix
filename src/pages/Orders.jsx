@@ -273,8 +273,12 @@ function Orders() {
                   <div className="order-tracker">
                     {statusSteps.map(
                       (status, index) => {
-                        const completed =
-                          index < currentStatusIndex;
+                            const completed =
+                                index < currentStatusIndex ||
+                                (
+                                    order.status === "Completed" &&
+                                    index === currentStatusIndex
+                                );
 
                         const active =
                           index === currentStatusIndex;
