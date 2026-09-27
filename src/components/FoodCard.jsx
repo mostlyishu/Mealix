@@ -4,6 +4,7 @@ function FoodCard({
   price,
   category,
   available,
+  imageUrl,
   quantity,
   onAdd,
   onIncrease,
@@ -26,17 +27,34 @@ function FoodCard({
         !available ? "unavailable" : ""
       }`}
     >
-      <div className="food-image">
-        <div className="food-image-placeholder">
-          {getFoodEmoji()}
-        </div>
+          <div className="food-image">
+              {imageUrl ? (
+                  <img
+                      src={imageUrl}
+                      alt={name}
+                      className="food-real-image"
+                      onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                          event.currentTarget
+                              .nextElementSibling
+                              ?.classList.remove("hidden");
+                      }}
+                  />
+              ) : null}
 
-        {!available && (
-          <span className="food-unavailable-badge">
-            Unavailable
-          </span>
-        )}
-      </div>
+              <div
+                  className={`food-image-placeholder ${imageUrl ? "hidden" : ""
+                      }`}
+              >
+                  {getFoodEmoji()}
+              </div>
+
+              {!available && (
+                  <span className="food-unavailable-badge">
+                      Unavailable
+                  </span>
+              )}
+          </div>
 
       <div className="food-card-content">
         <span className="food-category">

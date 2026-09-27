@@ -885,7 +885,8 @@ app.post(
       name,
       price,
       category,
-      available
+      available,
+      image_url
     } = req.body;
 
     if (!name || !price || !category) {
@@ -896,19 +897,21 @@ app.post(
     }
 
     const sql = `
-      INSERT INTO foods
-      (name, price, category, available)
-      VALUES (?, ?, ?, ?)
-    `;
+  INSERT INTO foods
+  (name, price, category, available, image_url)
+  VALUES (?, ?, ?, ?, ?)
+`;
 
     db.query(
       sql,
-      [
-        name,
-        price,
-        category,
-        available ?? true
-      ],
+        [
+            name,
+            price,
+            category,
+            available ?? true,
+            image_url || null
+        ],
+        
       (err, result) => {
         if (err) {
           console.error(err);
@@ -940,12 +943,13 @@ app.put(
   (req, res) => {
     const foodId = req.params.id;
 
-    const {
-      name,
-      price,
-      category,
-      available
-    } = req.body;
+      const {
+          name,
+          price,
+          category,
+          available,
+          image_url
+      } = req.body;
 
     if (!name || !price || !category) {
       return res.status(400).json({
@@ -954,25 +958,27 @@ app.put(
       });
     }
 
-    const sql = `
-      UPDATE foods
-      SET
-        name = ?,
-        price = ?,
-        category = ?,
-        available = ?
-      WHERE id = ?
-    `;
+      const sql = `
+  UPDATE foods
+  SET
+    name = ?,
+    price = ?,
+    category = ?,
+    available = ?,
+    image_url = ?
+  WHERE id = ?
+`;
 
     db.query(
       sql,
-      [
-        name,
-        price,
-        category,
-        available,
-        foodId
-      ],
+        [
+            name,
+            price,
+            category,
+            available,
+            image_url || null,
+            foodId
+        ],
       (err, result) => {
         if (err) {
           console.error(err);

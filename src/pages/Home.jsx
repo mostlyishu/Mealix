@@ -1,6 +1,46 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 function Home() {
+    const [popularFoods, setPopularFoods] = useState([]);
+
+useEffect(() => {
+  async function fetchPopularFoods() {
+    try {
+      const response = await fetch(
+        "http://localhost:5001/api/foods"
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch foods");
+      }
+
+      const availableFoods = data
+        .filter((food) => Number(food.available) === 1)
+        .slice(0, 4);
+
+      setPopularFoods(availableFoods);
+    } catch (error) {
+      console.error("Home foods error:", error);
+    }
+  }
+
+  fetchPopularFoods();
+}, []);
+
+function getFoodEmoji(name) {
+  const foodName = name.toLowerCase();
+
+  if (foodName.includes("burger")) return "🍔";
+  if (foodName.includes("sandwich")) return "🥪";
+  if (foodName.includes("coffee")) return "🥤";
+  if (foodName.includes("maggi")) return "🍜";
+
+  return "🍽️";
+}
+
   return (
     <main className="home-page">
 
@@ -131,57 +171,50 @@ function Home() {
           </Link>
         </div>
 
-        <div className="home-food-preview-grid">
+              <div className="home-food-preview-grid">
+                  {popularFoods.map((food) => (
+                      <div
+                          className="home-food-preview"
+                          key={food.id}
+                      >
+                          <div className="home-food-preview-image">
+                              {food.image_url ? (
+                                  <>
+                                      <img
+                                          src={food.image_url}
+                                          alt={food.name}
+                                          className="home-food-real-image"
+                                          onError={(event) => {
+                                              event.currentTarget.style.display = "none";
+                                              event.currentTarget
+                                                  .nextElementSibling
+                                                  ?.classList.remove("hidden");
+                                          }}
+                                      />
 
-          <div className="home-food-preview">
-            <div className="home-food-preview-image">
-              🍔
-            </div>
+                                      <span className="home-food-fallback hidden">
+                                          {getFoodEmoji(food.name)}
+                                      </span>
+                                  </>
+                              ) : (
+                                  <span className="home-food-fallback">
+                                      {getFoodEmoji(food.name)}
+                                  </span>
+                              )}
+                          </div>
 
-            <div className="home-food-preview-content">
-              <span>Burger</span>
-              <h3>Paneer Tikka Burger</h3>
-              <strong>₹60</strong>
-            </div>
-          </div>
+                          <div className="home-food-preview-content">
+                              <span>{food.category}</span>
 
-          <div className="home-food-preview">
-            <div className="home-food-preview-image">
-              🥪
-            </div>
+                              <h3>{food.name}</h3>
 
-            <div className="home-food-preview-content">
-              <span>Sandwich</span>
-              <h3>Veg Sandwich</h3>
-              <strong>₹50</strong>
-            </div>
-          </div>
-
-          <div className="home-food-preview">
-            <div className="home-food-preview-image">
-              🥤
-            </div>
-
-            <div className="home-food-preview-content">
-              <span>Beverage</span>
-              <h3>Cold Coffee</h3>
-              <strong>₹70</strong>
-            </div>
-          </div>
-
-          <div className="home-food-preview">
-            <div className="home-food-preview-image">
-              🍜
-            </div>
-
-            <div className="home-food-preview-content">
-              <span>Snacks</span>
-              <h3>Masala Maggi</h3>
-              <strong>₹50</strong>
-            </div>
-          </div>
-
-        </div>
+                              <strong>
+                                  ₹{Number(food.price).toFixed(0)}
+                              </strong>
+                          </div>
+                      </div>
+                  ))}
+              </div>
       </section>
 
 

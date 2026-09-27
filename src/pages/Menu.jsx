@@ -229,6 +229,7 @@ function Menu() {
                               price={food.price}
                               category={food.category}
                               available={Number(food.available) === 1}
+                              imageUrl={food.image_url}
                               quantity={cartItem?.quantity || 0}
                               onAdd={() => addToCart(food)}
                               onIncrease={increaseQuantity}

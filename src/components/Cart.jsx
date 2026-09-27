@@ -196,9 +196,26 @@ function Cart() {
                   >
                     <div className="cart-item-main">
 
-                      <div className="cart-item-visual">
-                        🍽️
-                      </div>
+                            <div className="cart-item-image">
+                                {food.image_url ? (
+                                    <img
+                                        src={food.image_url}
+                                        alt={food.name}
+                                        className="cart-food-image"
+                                        onError={(event) => {
+                                            event.currentTarget.style.display = "none";
+                                            event.currentTarget.nextElementSibling?.classList.remove("hidden");
+                                        }}
+                                    />
+                                ) : null}
+
+                                <span
+                                    className={`cart-food-fallback ${food.image_url ? "hidden" : ""
+                                        }`}
+                                >
+                                    🍽️
+                                </span>
+                            </div>
 
                       <div className="cart-item-info">
                         <span className="cart-item-category">
@@ -254,8 +271,19 @@ function Cart() {
                   </article>
                 );
               })}
-            </div>
-          </section>
+                      </div>
+
+          <div className="cart-add-more">
+            <button
+              className="cart-add-more-button"
+              onClick={() => navigate("/menu")}
+            >
+              <span>＋</span>
+              Add More Items
+            </button>
+          </div>
+
+        </section>
 
           {/* ORDER SUMMARY */}
 

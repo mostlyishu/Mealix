@@ -7057,3 +7057,196 @@ main {
     font-size: 9px;
   }
 }
+/* =========================
+   ADMIN FOOD IMAGES
+========================= */
+
+.food-image-field {
+  grid-column: 1 / -1;
+}
+
+.food-image-help {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin-top: 6px;
+}
+
+.food-image-preview {
+  width: 100%;
+  max-width: 320px;
+  height: 180px;
+  margin-top: 12px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+}
+
+.food-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-food-placeholder {
+  width: 100%;
+  height: 150px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-food-placeholder .admin-food-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* =========================
+   MENU REAL FOOD IMAGES
+========================= */
+
+.food-image {
+  position: relative;
+  overflow: hidden;
+}
+
+.food-real-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.food-image-placeholder.hidden {
+  display: none;
+}
+/* =========================
+   HOME REAL FOOD IMAGES
+========================= */
+
+.home-food-preview-image {
+  position: relative;
+  overflow: hidden;
+}
+
+.home-food-real-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.home-food-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-food-fallback.hidden {
+  display: none;
+}
+.cart-item-image {
+  width: 96px;
+  height: 96px;
+  border-radius: 18px;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-soft);
+}
+
+.cart-food-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.cart-food-fallback {
+  font-size: 2rem;
+}
+
+.cart-food-fallback.hidden {
+  display: none;
+}
+
+/* ===== CART ADD MORE ITEMS ===== */
+
+.cart-add-more {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.cart-add-more-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  padding: 12px 20px;
+
+  border: 1px solid #f0c9bd;
+  border-radius: 999px;
+
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    var(--primary-soft) 100%
+  );
+
+  color: var(--primary-dark);
+
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 4px 14px rgba(227, 83, 54, 0.08);
+
+  transition:
+    transform var(--transition),
+    box-shadow var(--transition),
+    border-color var(--transition),
+    background var(--transition);
+}
+
+.cart-add-more-button span {
+  width: 23px;
+  height: 23px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: var(--primary);
+  color: white;
+
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.cart-add-more-button:hover {
+  border-color: var(--primary);
+
+  background: var(--primary-soft);
+
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 20px rgba(227, 83, 54, 0.14);
+}
+
+.cart-add-more-button:hover span {
+  background: var(--primary-hover);
+}

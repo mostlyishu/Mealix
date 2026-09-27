@@ -6,6 +6,7 @@ function AdminFoods() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
     const [category, setCategory] = useState("");
+    const [imageUrl, setImageUrl] = useState("");
     const [newCategory, setNewCategory] = useState("");
     const [isAddingCategory, setIsAddingCategory] = useState(false);
 
@@ -52,6 +53,7 @@ function resetForm() {
   setNewCategory("");
   setIsAddingCategory(false);
   setAvailable(true);
+  setImageUrl("");
   setEditingId(null);
 }
 
@@ -60,7 +62,7 @@ function resetForm() {
 
     setError("");
     setMessage("");
-    setSaving(true);
+    
       const finalCategory = isAddingCategory
           ? newCategory.trim()
           : category;
@@ -69,6 +71,7 @@ function resetForm() {
           setError("Please select or add a category.");
           return;
       }
+      setSaving(true);
 
     const token = localStorage.getItem("token");
 
@@ -89,7 +92,8 @@ function resetForm() {
           name,
           price,
           category: finalCategory,
-          available
+          available,
+          image_url: imageUrl.trim()
         })
       });
 
@@ -123,6 +127,7 @@ function resetForm() {
       setIsAddingCategory(false);
 
       setAvailable(Number(food.available) === 1);
+      setImageUrl(food.image_url || "");
 
     setMessage("");
     setError("");
@@ -391,6 +396,42 @@ function resetForm() {
             </div>
           </div>
 
+                  <div className="food-form-field food-image-field">
+                      <label htmlFor="food-image">
+                          Food image
+                      </label>
+
+                      <input
+                          id="food-image"
+                          type="text"
+                          placeholder="https://example.com/food-image.jpg"
+                          value={imageUrl}
+                          onChange={(event) =>
+                              setImageUrl(event.target.value)
+                          }
+                      />
+
+                      <small className="food-image-help">
+                          Use a local Mealix image path, e.g.
+                          /images/foods/veg-sandwich.png
+                      </small>
+
+                      {imageUrl && (
+                          <div className="food-image-preview">
+                              <img
+                                  src={imageUrl}
+                                  alt="Food preview"
+                                  onError={(event) => {
+                                      event.currentTarget.style.display = "none";
+                                  }}
+                                  onLoad={(event) => {
+                                      event.currentTarget.style.display = "block";
+                                  }}
+                              />
+                          </div>
+                      )}
+                  </div>
+
           <label className="food-availability-control">
             <input
               type="checkbox"
@@ -489,9 +530,20 @@ function resetForm() {
                   key={food.id}
                 >
                   <div className="admin-food-card-top">
-                    <div className="admin-food-placeholder">
-                      🍽️
-                    </div>
+                          <div className="admin-food-placeholder">
+                              {food.image_url ? (
+                                  <img
+                                      src={food.image_url}
+                                      alt={food.name}
+                                      className="admin-food-image"
+                                      onError={(event) => {
+                                          event.currentTarget.style.display = "none";
+                                      }}
+                                  />
+                              ) : (
+                                  <span>🍽️</span>
+                              )}
+                          </div>
 
                     <span
                       className={`food-admin-status ${
