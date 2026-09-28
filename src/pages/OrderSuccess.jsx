@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import API_URL from "../config/api";
 
 function OrderSuccess() {
   const location = useLocation();

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import API_URL from "../config/api";
 
 function AdminOrders() {
   const [orders, setOrders] = useState([]);
@@ -20,7 +21,7 @@ function AdminOrders() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        "http://localhost:5001/api/admin/stats",
+        `${API_URL}/api/admin/stats`,
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -53,7 +54,7 @@ function AdminOrders() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        "http://localhost:5001/api/admin/orders",
+        `${API_URL}/api/admin/orders`,
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -92,7 +93,7 @@ function AdminOrders() {
         localStorage.getItem("token");
 
       const response = await fetch(
-        `http://localhost:5001/api/admin/orders/${orderId}/status`,
+        `${API_URL}/api/admin/orders/${orderId}/status`,
         {
           method: "PATCH",
           headers: {

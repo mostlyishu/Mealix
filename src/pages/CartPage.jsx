@@ -1,4 +1,5 @@
 import Cart from "../components/Cart";
+import API_URL from "../config/api";
 
 function CartPage() {
   return (

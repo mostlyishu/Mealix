@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import API_URL from "../config/api";
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -31,7 +32,7 @@ function Register() {
       setSuccess(false);
 
       const response = await fetch(
-        "http://localhost:5001/api/register",
+        `${API_URL}/api/register`,
         {
           method: "POST",
           headers: {

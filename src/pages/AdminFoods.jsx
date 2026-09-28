@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import API_URL from "../config/api";
 
 function AdminFoods() {
   const [foods, setFoods] = useState([]);
@@ -29,7 +30,7 @@ function AdminFoods() {
       setError("");
 
       const response = await fetch(
-        "http://localhost:5001/api/foods"
+        `${API_URL}/api/foods`
       );
 
       const data = await response.json();
@@ -76,8 +77,8 @@ function resetForm() {
     const token = localStorage.getItem("token");
 
     const url = editingId
-      ? `http://localhost:5001/api/admin/foods/${editingId}`
-      : "http://localhost:5001/api/admin/foods";
+  ? `${API_URL}/api/admin/foods/${editingId}`
+  : `${API_URL}/api/admin/foods`;
 
     const method = editingId ? "PUT" : "POST";
 
@@ -154,7 +155,7 @@ function resetForm() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `http://localhost:5001/api/admin/foods/${id}`,
+        `${API_URL}/api/admin/foods/${id}`,
         {
           method: "DELETE",
           headers: {

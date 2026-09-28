@@ -1,4 +1,5 @@
 import { useState } from "react";
+import API_URL from "../config/api";
 import {
   Link,
   useNavigate
@@ -34,7 +35,7 @@ function Login() {
       setMessage("");
 
       const response = await fetch(
-        "http://localhost:5001/api/login",
+        `${API_URL}/api/login`,
         {
           method: "POST",
           headers: {

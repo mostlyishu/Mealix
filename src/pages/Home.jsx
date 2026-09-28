@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import API_URL from "../config/api";
 
 function Home() {
     const [popularFoods, setPopularFoods] = useState([]);
@@ -8,7 +9,7 @@ useEffect(() => {
   async function fetchPopularFoods() {
     try {
       const response = await fetch(
-        "http://localhost:5001/api/foods"
+        `${API_URL}/api/foods`
       );
 
       const data = await response.json();

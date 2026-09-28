@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import FoodCard from "../components/FoodCard";
 import { useCart } from "../context/CartContext";
+import API_URL from "../config/api";
 
 function Menu() {
   const {
@@ -22,7 +23,7 @@ function Menu() {
     useState("All");
 
   useEffect(() => {
-    fetch("http://localhost:5001/api/foods")
+    fetch(`${API_URL}/api/foods`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to fetch foods");

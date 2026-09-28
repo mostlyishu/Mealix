@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import API_URL from "../config/api";
 import {
   BarChart,
   Bar,
@@ -65,7 +66,7 @@ function AdminAnalytics() {
     const token = localStorage.getItem("token");
 
     const response = await fetch(
-      "http://localhost:5001/api/admin/analytics/categories",
+      `${API_URL}/api/admin/analytics/categories`,
       {
         headers: {
           Authorization: `Bearer ${token}`
@@ -105,7 +106,7 @@ function AdminAnalytics() {
     const token = localStorage.getItem("token");
 
     const response = await fetch(
-      "http://localhost:5001/api/admin/analytics/hourly",
+      `${API_URL}/api/admin/analytics/hourly`,
       {
         headers: {
           Authorization: `Bearer ${token}`
@@ -155,7 +156,7 @@ function AdminAnalytics() {
     const token = localStorage.getItem("token");
 
     const response = await fetch(
-      "http://localhost:5001/api/admin/analytics/daily",
+      `${API_URL}/api/admin/analytics/daily`,
       {
         headers: {
           Authorization: `Bearer ${token}`
@@ -210,7 +211,7 @@ function AdminAnalytics() {
     const token = localStorage.getItem("token");
 
     const response = await fetch(
-      "http://localhost:5001/api/admin/analytics/foods",
+      `${API_URL}/api/admin/analytics/foods`,
       {
         headers: {
           Authorization: `Bearer ${token}`
@@ -250,7 +251,7 @@ function AdminAnalytics() {
     const token = localStorage.getItem("token");
 
     const response = await fetch(
-      "http://localhost:5001/api/admin/stats",
+      `${API_URL}/api/admin/stats`,
       {
         headers: {
           Authorization: `Bearer ${token}`
