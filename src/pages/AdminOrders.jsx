@@ -427,10 +427,13 @@ function AdminOrders() {
                 );
 
               return (
-                <article
-                  className="admin-v2-order-card"
-                  key={order.order_id}
-                >
+                  <article
+                      className={`admin-v2-order-card ${order.status === "Cancelled"
+                              ? "admin-order-cancelled"
+                              : ""
+                          }`}
+                      key={order.order_id}
+                  >
                   {/* Order heading */}
 
                   <div className="admin-order-top">
@@ -524,44 +527,66 @@ function AdminOrders() {
                     </strong>
                   </div>
 
-                  {/* Status */}
 
-                  <div className="admin-status-control-v2">
-                    <div>
-                      <span>ORDER STATUS</span>
+ {/* Status */}
 
-                      <small>
-                        Update kitchen progress
-                      </small>
-                    </div>
+             {order.status === "Cancelled" ? (
+                          <div className="admin-cancelled-notice">
+                              <div className="admin-cancelled-notice-icon">
+                                  ×
+                              </div>
 
-                    <select
-                      id={`status-${order.order_id}`}
-                      value={order.status}
-                      onChange={(event) =>
-                        updateStatus(
-                          order.order_id,
-                          event.target.value
-                        )
-                      }
-                    >
-                      <option value="Pending">
-                        Pending
-                      </option>
+                              <div>
+                                  <span>CANCELLED ORDER</span>
 
-                      <option value="Preparing">
-                        Preparing
-                      </option>
+                                  <strong>
+                                      No kitchen action required
+                                  </strong>
 
-                      <option value="Ready">
-                        Ready
-                      </option>
+                                  <small>
+                                      This order was cancelled by the student before
+                                      preparation started.
+                                  </small>
+                              </div>
+                          </div>
+                      ) : (
+                          <div className="admin-status-control-v2">
+                              <div>
+                                  <span>ORDER STATUS</span>
 
-                      <option value="Completed">
-                        Completed
-                      </option>
-                    </select>
-                  </div>
+                                  <small>
+                                      Update kitchen progress
+                                  </small>
+                              </div>
+
+                              <select
+                                  id={`status-${order.order_id}`}
+                                  value={order.status}
+                                  onChange={(event) =>
+                                      updateStatus(
+                                          order.order_id,
+                                          event.target.value
+                                      )
+                                  }
+                              >
+                                  <option value="Pending">
+                                      Pending
+                                  </option>
+
+                                  <option value="Preparing">
+                                      Preparing
+                                  </option>
+
+                                  <option value="Ready">
+                                      Ready
+                                  </option>
+
+                                  <option value="Completed">
+                                      Completed
+                                  </option>
+                              </select>
+                          </div>
+                      )}
 
                 </article>
               );

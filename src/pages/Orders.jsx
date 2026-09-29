@@ -6,6 +6,7 @@ function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cancellingId, setCancellingId] = useState(null);
 
   const navigate = useNavigate();
 
@@ -42,6 +43,44 @@ function Orders() {
       setLoading(false);
     }
   }
+  async function cancelOrder(orderId) {
+  const confirmed = window.confirm(
+    "Are you sure you want to cancel this order?"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    setCancellingId(orderId);
+    setError("");
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `${API_URL}/api/orders/${orderId}/cancel`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to cancel order"
+      );
+    }
+
+    await fetchOrders();
+  } catch (error) {
+    setError(error.message);
+  } finally {
+    setCancellingId(null);
+  }
+}
 
   // =========================
   // GROUP ORDER ITEMS
@@ -260,64 +299,71 @@ function Orders() {
 
                 </div>
 
-                {/* STATUS TRACKER */}
+      {/* STATUS TRACKER */}
 
-                <div className="order-tracking-section">
-                  <div className="tracking-heading">
-                    <h3>Order Progress</h3>
+{order.status === "Cancelled" ? (
+  <div className="order-cancelled-section">
+    <div className="order-cancelled-icon">×</div>
 
-                    <span>
-                      {order.status}
-                    </span>
-                  </div>
+    <div>
+      <h3>Order Cancelled</h3>
+      <p>
+        This order was cancelled before preparation started.
+      </p>
+    </div>
+  </div>
+) : (
+  <div className="order-tracking-section">
+    <div className="tracking-heading">
+      <h3>Order Progress</h3>
 
-                  <div className="order-tracker">
-                    {statusSteps.map(
-                      (status, index) => {
-                            const completed =
-                                index < currentStatusIndex ||
-                                (
-                                    order.status === "Completed" &&
-                                    index === currentStatusIndex
-                                );
+      <span>{order.status}</span>
+    </div>
 
-                        const active =
-                          index === currentStatusIndex;
+    <div className="order-tracker">
+      {statusSteps.map((status, index) => {
+        const completed =
+          index < currentStatusIndex ||
+          (
+            order.status === "Completed" &&
+            index === currentStatusIndex
+          );
 
-                        return (
-                          <div
-                            className="tracker-step"
-                            key={status}
-                          >
-                            <div
-                              className={`tracker-circle ${
-                                completed
-                                  ? "completed"
-                                  : active
-                                  ? "active"
-                                  : ""
-                              }`}
-                            >
-                              {completed
-                                ? "✓"
-                                : index + 1}
-                            </div>
+        const active =
+          index === currentStatusIndex;
 
-                            <span
-                              className={
-                                completed || active
-                                  ? "tracker-label active"
-                                  : "tracker-label"
-                              }
-                            >
-                              {status}
-                            </span>
-                          </div>
-                        );
-                      }
-                    )}
-                  </div>
-                </div>
+        return (
+          <div
+            className="tracker-step"
+            key={status}
+          >
+            <div
+              className={`tracker-circle ${
+                completed
+                  ? "completed"
+                  : active
+                  ? "active"
+                  : ""
+              }`}
+            >
+              {completed ? "✓" : index + 1}
+            </div>
+
+            <span
+              className={
+                completed || active
+                  ? "tracker-label active"
+                  : "tracker-label"
+              }
+            >
+              {status}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
 
                 {/* ITEMS */}
 
@@ -376,6 +422,23 @@ function Orders() {
                     ).toFixed(0)}
                   </strong>
                 </div>
+                {order.status === "Pending" && (
+  <div className="order-cancel-actions">
+    <button
+      className="cancel-order-button"
+      onClick={() => cancelOrder(order.order_id)}
+      disabled={cancellingId === order.order_id}
+    >
+      {cancellingId === order.order_id
+        ? "Cancelling..."
+        : "Cancel Order"}
+    </button>
+
+    <span>
+      Cancellation is available until preparation begins.
+    </span>
+  </div>
+)}
 
               </article>
             );

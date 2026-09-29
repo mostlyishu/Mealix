@@ -540,6 +540,8 @@ order_items.quantity
           estimatedPickup = "Ready for pickup";
         } else if (item.status === "Completed") {
           estimatedPickup = "Order collected";
+        } else if (item.status === "Cancelled") {
+          estimatedPickup = "Order cancelled";
         } else {
           estimatedPickup = "Calculating...";
         }
@@ -552,6 +554,43 @@ order_items.quantity
       });
 
       res.json(ordersWithEstimate);
+    });
+  });
+});
+
+// =========================
+// CANCEL STUDENT ORDER
+// =========================
+
+app.patch("/api/orders/:id/cancel", authMiddleware, (req, res) => {
+  const orderId = req.params.id;
+  const userId = req.user.id;
+
+  const sql = `
+    UPDATE orders
+    SET status = 'Cancelled'
+    WHERE id = ?
+      AND user_id = ?
+      AND status = 'Pending'
+  `;
+
+  db.query(sql, [orderId, userId], (err, result) => {
+    if (err) {
+      console.error(err);
+
+      return res.status(500).json({
+        message: "Failed to cancel order"
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(400).json({
+        message: "Order cannot be cancelled"
+      });
+    }
+
+    res.json({
+      message: "Order cancelled successfully"
     });
   });
 });

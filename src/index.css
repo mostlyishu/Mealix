@@ -7250,3 +7250,187 @@ main {
 .cart-add-more-button:hover span {
   background: var(--primary-hover);
 }
+/* ===== ORDER CANCELLATION ===== */
+
+.order-cancel-actions {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.order-cancel-actions span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.cancel-order-button {
+  padding: 10px 18px;
+
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+
+  background: #fff7f7;
+  color: var(--danger);
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: var(--transition);
+}
+
+.cancel-order-button:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: var(--danger);
+  transform: translateY(-1px);
+}
+
+.cancel-order-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+/* CANCELLED ORDER */
+
+.order-cancelled-section {
+  margin-top: 20px;
+  padding: 18px;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+
+  background: #fff7f7;
+}
+
+.order-cancelled-icon {
+  width: 38px;
+  height: 38px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #fee2e2;
+  color: var(--danger);
+
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.order-cancelled-section h3 {
+  margin: 0 0 4px;
+  color: var(--danger);
+  font-size: 15px;
+}
+
+.order-cancelled-section p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .order-cancel-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cancel-order-button {
+    width: 100%;
+  }
+}
+/* ===== ADMIN CANCELLED ORDERS ===== */
+
+.admin-v2-order-card.admin-order-cancelled {
+  border: 1px solid #fecaca;
+  background:
+    linear-gradient(
+      135deg,
+      #ffffff 0%,
+      #fff7f7 100%
+    );
+  box-shadow:
+    0 8px 24px rgba(220, 38, 38, 0.08);
+}
+
+/* Top-right Cancelled badge */
+
+.order-status.cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  font-weight: 800;
+}
+
+/* Bottom cancellation notice */
+
+.admin-cancelled-notice {
+  margin-top: 18px;
+  padding: 16px 18px;
+
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  background: #fff1f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+}
+
+.admin-cancelled-notice-icon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #dc2626;
+  color: white;
+
+  font-size: 23px;
+  font-weight: 700;
+}
+
+.admin-cancelled-notice > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.admin-cancelled-notice span {
+  color: #b91c1c;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.admin-cancelled-notice strong {
+  color: #991b1b;
+  font-size: 14px;
+}
+
+.admin-cancelled-notice small {
+  color: #7f1d1d;
+  font-size: 12px;
+  line-height: 1.5;
+}
