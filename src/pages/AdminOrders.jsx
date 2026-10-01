@@ -6,6 +6,8 @@ function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [stats, setStats] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
 
   useEffect(() => {
     fetchOrders();
@@ -178,6 +180,25 @@ function AdminOrders() {
       new Date(b.created_at) -
       new Date(a.created_at)
   );
+  const filteredOrders = orderList.filter((order) => {
+  const search = searchTerm.trim().toLowerCase();
+
+  const matchesSearch =
+    search === "" ||
+    String(order.order_id).includes(search) ||
+    order.customer_name
+      ?.toLowerCase()
+      .includes(search) ||
+    order.customer_email
+      ?.toLowerCase()
+      .includes(search);
+
+  const matchesStatus =
+    statusFilter === "All" ||
+    order.status === statusFilter;
+
+  return matchesSearch && matchesStatus;
+});
 
   const totalActiveOrders = stats
     ? Number(stats.pending_orders) +
@@ -376,10 +397,57 @@ function AdminOrders() {
 
           {!loading && (
             <span className="admin-order-count">
-              {orderList.length} orders
+                          {filteredOrders.length === orderList.length
+                              ? `${orderList.length} orders`
+                              : `${filteredOrders.length} of ${orderList.length} orders`}
             </span>
           )}
         </div>
+
+        {/* ORDER SEARCH + FILTER */}
+
+<div className="admin-order-tools">
+  <div className="admin-order-search">
+    <span>⌕</span>
+
+    <input
+      type="text"
+      placeholder="Search order, student or email..."
+      value={searchTerm}
+      onChange={(event) =>
+        setSearchTerm(event.target.value)
+      }
+    />
+
+    {searchTerm && (
+      <button
+        type="button"
+        onClick={() => setSearchTerm("")}
+        aria-label="Clear search"
+      >
+        ×
+      </button>
+    )}
+  </div>
+
+  <div className="admin-status-filter">
+    <span>Filter by</span>
+
+    <select
+      value={statusFilter}
+      onChange={(event) =>
+        setStatusFilter(event.target.value)
+      }
+    >
+      <option value="All">All Statuses</option>
+      <option value="Pending">Pending</option>
+      <option value="Preparing">Preparing</option>
+      <option value="Ready">Ready</option>
+      <option value="Completed">Completed</option>
+      <option value="Cancelled">Cancelled</option>
+    </select>
+  </div>
+</div>
 
         {error && (
           <div className="admin-v2-error">
@@ -414,10 +482,33 @@ function AdminOrders() {
               </p>
             </div>
           )}
+          {!loading &&
+  !error &&
+  orderList.length > 0 &&
+  filteredOrders.length === 0 && (
+    <div className="admin-filter-empty">
+      <div>⌕</div>
 
+      <h3>No matching orders</h3>
+
+      <p>
+        Try another search or change the status filter.
+      </p>
+
+      <button
+        type="button"
+        onClick={() => {
+          setSearchTerm("");
+          setStatusFilter("All");
+        }}
+      >
+        Clear Filters
+      </button>
+    </div>
+  )}
         {!loading && !error && (
           <div className="admin-v2-orders-list">
-            {orderList.map((order) => {
+            {filteredOrders.map((order) => {
               const totalItems =
                 order.items.reduce(
                   (sum, item) =>
