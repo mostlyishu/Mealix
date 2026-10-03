@@ -70,16 +70,63 @@ app.get("/", (req, res) => {
 app.post("/api/register", async (req, res) => {
   const { name, email, password } = req.body;
 
-  if (!name || !email || !password) {
-    return res.status(400).json({
-      message: "All fields are required"
-    });
-  }
+const cleanName =
+  typeof name === "string" ? name.trim() : "";
+
+const cleanEmail =
+  typeof email === "string"
+    ? email.trim().toLowerCase()
+    : "";
+
+if (!cleanName || !cleanEmail || !password) {
+  return res.status(400).json({
+    message: "All fields are required"
+  });
+}
+
+if (cleanName.length < 2) {
+  return res.status(400).json({
+    message: "Name must be at least 2 characters"
+  });
+}
+
+if (cleanName.length > 50) {
+  return res.status(400).json({
+    message: "Name must be 50 characters or less"
+  });
+}
+
+const emailPattern =
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+if (!emailPattern.test(cleanEmail)) {
+  return res.status(400).json({
+    message: "Please enter a valid email address"
+  });
+}
+
+if (
+  typeof password !== "string" ||
+  password.length < 6
+) {
+  return res.status(400).json({
+    message: "Password must be at least 6 characters"
+  });
+}
+
+if (password.length > 72) {
+  return res.status(400).json({
+    message: "Password is too long"
+  });
+}
 
   try {
     const checkSql = "SELECT * FROM users WHERE email = ?";
 
-    db.query(checkSql, [email], async (err, results) => {
+    db.query(
+  checkSql,
+  [cleanEmail],
+  async (err, results) => {
       if (err) {
         console.error(err);
 
@@ -101,7 +148,7 @@ app.post("/api/register", async (req, res) => {
 
       db.query(
         insertSql,
-        [name, email, hashedPassword],
+        [[cleanName, cleanEmail, hashedPassword]],
         (err, result) => {
           if (err) {
             console.error(err);
@@ -134,17 +181,40 @@ app.post("/api/register", async (req, res) => {
 // =========================
 
 app.post("/api/login", (req, res) => {
-  const { email, password } = req.body;
+ const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({
-      message: "Email and password are required"
-    });
-  }
+const cleanEmail =
+  typeof email === "string"
+    ? email.trim().toLowerCase()
+    : "";
+
+if (!cleanEmail || !password) {
+  return res.status(400).json({
+    message: "Email and password are required"
+  });
+}
+
+const emailPattern =
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+if (!emailPattern.test(cleanEmail)) {
+  return res.status(400).json({
+    message: "Please enter a valid email address"
+  });
+}
+
+if (typeof password !== "string") {
+  return res.status(400).json({
+    message: "Invalid password"
+  });
+}
 
   const sql = "SELECT * FROM users WHERE email = ?";
 
-  db.query(sql, [email], async (err, results) => {
+  db.query(
+  sql,
+  [cleanEmail],
+  async (err, results) => {
     if (err) {
       console.error(err);
 
@@ -928,12 +998,36 @@ app.post(
       image_url
     } = req.body;
 
-    if (!name || !price || !category) {
-      return res.status(400).json({
-        message:
-          "Name, price and category are required"
-      });
-    }
+    const cleanName =
+  typeof name === "string" ? name.trim() : "";
+
+const cleanCategory =
+  typeof category === "string"
+    ? category.trim()
+    : "";
+
+const numericPrice = Number(price);
+
+if (!cleanName || !cleanCategory || price === "") {
+  return res.status(400).json({
+    message: "Name, price and category are required"
+  });
+}
+
+if (cleanName.length < 2) {
+  return res.status(400).json({
+    message: "Food name must be at least 2 characters"
+  });
+}
+
+if (
+  !Number.isFinite(numericPrice) ||
+  numericPrice <= 0
+) {
+  return res.status(400).json({
+    message: "Price must be greater than 0"
+  });
+}
 
     const sql = `
   INSERT INTO foods
@@ -944,11 +1038,13 @@ app.post(
     db.query(
       sql,
         [
-            name,
-            price,
-            category,
+            
+            cleanName,
+            numericPrice,
+            cleanCategory,
             available ?? true,
             image_url || null
+
         ],
         
       (err, result) => {
@@ -990,12 +1086,36 @@ app.put(
           image_url
       } = req.body;
 
-    if (!name || !price || !category) {
-      return res.status(400).json({
-        message:
-          "Name, price and category are required"
-      });
-    }
+    const cleanName =
+  typeof name === "string" ? name.trim() : "";
+
+const cleanCategory =
+  typeof category === "string"
+    ? category.trim()
+    : "";
+
+const numericPrice = Number(price);
+
+if (!cleanName || !cleanCategory || price === "") {
+  return res.status(400).json({
+    message: "Name, price and category are required"
+  });
+}
+
+if (cleanName.length < 2) {
+  return res.status(400).json({
+    message: "Food name must be at least 2 characters"
+  });
+}
+
+if (
+  !Number.isFinite(numericPrice) ||
+  numericPrice <= 0
+) {
+  return res.status(400).json({
+    message: "Price must be greater than 0"
+  });
+}
 
       const sql = `
   UPDATE foods
@@ -1011,9 +1131,9 @@ app.put(
     db.query(
       sql,
         [
-            name,
-            price,
-            category,
+            cleanName,
+            numericPrice,
+            cleanCategory,
             available,
             image_url || null,
             foodId
@@ -1096,53 +1216,99 @@ app.patch(
   authMiddleware,
   adminMiddleware,
   (req, res) => {
-    const orderId = req.params.id;
+    const orderId = Number(req.params.id);
     const { status } = req.body;
 
-    const allowedStatuses = [
-      "Pending",
-      "Preparing",
-      "Ready",
-      "Completed"
-    ];
-
-    if (!allowedStatuses.includes(status)) {
+    if (!Number.isInteger(orderId) || orderId <= 0) {
       return res.status(400).json({
-        message: "Invalid order status"
+        message: "Invalid order ID"
       });
     }
 
+    const allowedTransitions = {
+      Pending: "Preparing",
+      Preparing: "Ready",
+      Ready: "Completed"
+    };
+
     const sql = `
-      UPDATE orders
-      SET status = ?
+      SELECT status
+      FROM orders
       WHERE id = ?
     `;
 
-    db.query(
-      sql,
-      [status, orderId],
-      (err, result) => {
-        if (err) {
-          console.error(err);
+    db.query(sql, [orderId], (err, results) => {
+      if (err) {
+        console.error(err);
 
-          return res.status(500).json({
-            message:
-              "Failed to update order status"
-          });
-        }
-
-        if (result.affectedRows === 0) {
-          return res.status(404).json({
-            message: "Order not found"
-          });
-        }
-
-        res.json({
-          message:
-            "Order status updated successfully"
+        return res.status(500).json({
+          message: "Failed to check order status"
         });
       }
-    );
+
+      if (results.length === 0) {
+        return res.status(404).json({
+          message: "Order not found"
+        });
+      }
+
+      const currentStatus = results[0].status;
+
+      if (currentStatus === "Cancelled") {
+        return res.status(409).json({
+          message: "Cancelled orders cannot be updated"
+        });
+      }
+
+      if (currentStatus === "Completed") {
+        return res.status(409).json({
+          message: "Completed orders cannot be updated"
+        });
+      }
+
+      const expectedNextStatus =
+        allowedTransitions[currentStatus];
+
+      if (status !== expectedNextStatus) {
+        return res.status(400).json({
+          message:
+            `Order must move from ${currentStatus} to ${expectedNextStatus}`
+        });
+      }
+
+      const updateSql = `
+        UPDATE orders
+        SET status = ?
+        WHERE id = ?
+          AND status = ?
+      `;
+
+      db.query(
+        updateSql,
+        [status, orderId, currentStatus],
+        (err, result) => {
+          if (err) {
+            console.error(err);
+
+            return res.status(500).json({
+              message: "Failed to update order status"
+            });
+          }
+
+          if (result.affectedRows === 0) {
+            return res.status(409).json({
+              message:
+                "Order status changed. Please refresh and try again."
+            });
+          }
+
+          res.json({
+            message: "Order status updated successfully",
+            status
+          });
+        }
+      );
+    });
   }
 );
 

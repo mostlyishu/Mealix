@@ -85,51 +85,71 @@ function AdminOrders() {
   // =========================
 
   async function updateStatus(
-    orderId,
-    newStatus
-  ) {
-    try {
-      setError("");
+  orderId,
+  newStatus
+) {
+  try {
+    setError("");
 
-      const token =
-        localStorage.getItem("token");
+    const token =
+      localStorage.getItem("token");
 
-      const response = await fetch(
-        `${API_URL}/api/admin/orders/${orderId}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            status: newStatus
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message);
+    const response = await fetch(
+      `${API_URL}/api/admin/orders/${orderId}/status`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: newStatus
+        })
       }
+    );
 
-      setOrders((currentOrders) =>
-        currentOrders.map((order) =>
-          order.order_id === orderId
-            ? {
-                ...order,
-                status: newStatus
-              }
-            : order
-        )
-      );
+    const data = await response.json();
 
-      await fetchStats();
-    } catch (error) {
-      setError(error.message);
+    if (!response.ok) {
+      throw new Error(data.message);
     }
+
+    setOrders((currentOrders) =>
+      currentOrders.map((order) =>
+        order.order_id === orderId
+          ? {
+              ...order,
+              status: newStatus
+            }
+          : order
+      )
+    );
+
+    await fetchStats();
+  } catch (error) {
+    setError(error.message);
   }
+}
+
+function getNextStatus(status) {
+  const transitions = {
+    Pending: "Preparing",
+    Preparing: "Ready",
+    Ready: "Completed"
+  };
+
+  return transitions[status] || null;
+}
+
+function getStatusActionLabel(status) {
+  const labels = {
+    Pending: "Start Preparing",
+    Preparing: "Mark as Ready",
+    Ready: "Complete Order"
+  };
+
+  return labels[status] || "";
+}
 
   // =========================
   // REFRESH DASHBOARD
@@ -640,44 +660,49 @@ function AdminOrders() {
                                   </small>
                               </div>
                           </div>
-                      ) : (
-                          <div className="admin-status-control-v2">
-                              <div>
-                                  <span>ORDER STATUS</span>
+                    ) : order.status === "Completed" ? (
+  <div className="admin-completed-notice">
+    <div className="admin-completed-icon">
+      ✓
+    </div>
 
-                                  <small>
-                                      Update kitchen progress
-                                  </small>
-                              </div>
+    <div>
+      <span>ORDER COMPLETED</span>
 
-                              <select
-                                  id={`status-${order.order_id}`}
-                                  value={order.status}
-                                  onChange={(event) =>
-                                      updateStatus(
-                                          order.order_id,
-                                          event.target.value
-                                      )
-                                  }
-                              >
-                                  <option value="Pending">
-                                      Pending
-                                  </option>
+      <strong>
+        Order successfully collected
+      </strong>
 
-                                  <option value="Preparing">
-                                      Preparing
-                                  </option>
+      <small>
+        No further kitchen action is required.
+      </small>
+    </div>
+  </div>
+) : (
+  <div className="admin-status-control-v2">
+    <div>
+      <span>ORDER STATUS</span>
 
-                                  <option value="Ready">
-                                      Ready
-                                  </option>
+      <small>
+        Current: {order.status}
+      </small>
+    </div>
 
-                                  <option value="Completed">
-                                      Completed
-                                  </option>
-                              </select>
-                          </div>
-                      )}
+    <button
+      type="button"
+      className="admin-status-action-button"
+      onClick={() =>
+        updateStatus(
+          order.order_id,
+          getNextStatus(order.status)
+        )
+      }
+    >
+      {getStatusActionLabel(order.status)}
+      <span>→</span>
+    </button>
+  </div>
+)}
 
                 </article>
               );
