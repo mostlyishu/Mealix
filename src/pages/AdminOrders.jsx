@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import API_URL from "../config/api";
+import KitchenPulse from "../components/KitchenPulse";
 
 function AdminOrders() {
   const [orders, setOrders] = useState([]);
@@ -8,6 +9,7 @@ function AdminOrders() {
   const [stats, setStats] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [pulseRefreshKey, setPulseRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchOrders();
@@ -126,6 +128,7 @@ function AdminOrders() {
     );
 
     await fetchStats();
+    setPulseRefreshKey((previous) => previous + 1);
   } catch (error) {
     setError(error.message);
   }
@@ -156,13 +159,15 @@ function getStatusActionLabel(status) {
   // =========================
 
   async function refreshDashboard() {
-    setError("");
+  setError("");
 
-    await Promise.all([
-      fetchOrders(),
-      fetchStats()
-    ]);
-  }
+  await Promise.all([
+    fetchOrders(),
+    fetchStats()
+  ]);
+
+  setPulseRefreshKey((previous) => previous + 1);
+}
 
   // =========================
   // GROUP ORDER ITEMS
@@ -398,6 +403,11 @@ function getStatusActionLabel(status) {
           </div>
         </section>
       )}
+      {/* =========================
+         KITCHEN PULSE
+         ========================= */}
+
+     <KitchenPulse refreshKey={pulseRefreshKey} />
 
       {/* =========================
           ORDERS

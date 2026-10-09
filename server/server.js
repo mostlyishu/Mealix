@@ -68,87 +68,151 @@ app.get("/api/breaksync", (req, res) => {
     });
   }
 
-  // Count orders currently waiting in the kitchen
-  const queueSql = `
-    SELECT COUNT(*) AS active_orders
-    FROM orders
-    WHERE status IN ('Pending', 'Preparing')
-  `;
-
-  db.query(queueSql, (queueErr, queueResults) => {
-    if (queueErr) {
-      console.error(queueErr);
+  calculateKitchenWorkload((err, workload) => {
+    if (err) {
+      console.error("BreakSync workload error:", err);
 
       return res.status(500).json({
-        message: "Failed to check kitchen queue"
+        message: "Failed to calculate kitchen workload"
       });
     }
 
-    const activeOrders = Number(queueResults[0].active_orders);
+    const queueDelay =
+      workload.estimated_workload_minutes;
 
-    // Initial approximation: 3 minutes per active order
-    const queueDelay = activeOrders * 3;
+    const safetyBuffer = 5;
 
-    const foodSql = `
-      SELECT
-        id,
-        name,
-        price,
-        category,
-        image_url,
-        meal_type,
-        prep_time
-      FROM foods
-      WHERE available = 1
-      ORDER BY prep_time ASC
-    `;
+    db.query(
+      `SELECT id, name, price, category, image_url,
+              meal_type, prep_time
+       FROM foods
+       WHERE available = 1
+       ORDER BY prep_time ASC`,
+      (foodErr, foods) => {
+        if (foodErr) {
+          return res.status(500).json({
+            message: "Failed to find suitable meals"
+          });
+        }
 
-    db.query(foodSql, (foodErr, foods) => {
-      if (foodErr) {
-        console.error(foodErr);
+        const recommendations = foods
+          .map((food) => {
+            const estimatedMinutes =
+              Number(food.prep_time) +
+              queueDelay +
+              safetyBuffer;
+
+            return {
+              ...food,
+              estimated_minutes: estimatedMinutes,
+              fits_break: estimatedMinutes <= breakMinutes
+            };
+          })
+          .filter((food) => food.fits_break)
+          .sort(
+            (a, b) =>
+              a.estimated_minutes - b.estimated_minutes
+          )
+          .slice(0, 5);
+
+        res.json({
+          break_minutes: breakMinutes,
+          ...workload,
+          queue_delay: queueDelay,
+          safety_buffer: safetyBuffer,
+          recommendations,
+          message:
+            recommendations.length > 0
+              ? "Meals available within your break"
+              : "No meals currently fit your break time"
+        });
+      }
+    );
+  });
+});
+
+// =========================
+// SHARED KITCHEN WORKLOAD ENGINE
+// =========================
+
+function calculateKitchenWorkload(callback) {
+  const sql = `
+    SELECT
+      o.id AS order_id,
+      oi.quantity,
+      f.prep_time
+    FROM orders o
+    JOIN order_items oi ON o.id = oi.order_id
+    JOIN foods f ON oi.food_id = f.id
+    WHERE o.status IN ('Pending', 'Preparing')
+  `;
+
+  db.query(sql, (err, items) => {
+    if (err) {
+      return callback(err);
+    }
+
+    const kitchenCapacity = 2;
+
+    const totalWorkMinutes = items.reduce(
+      (sum, item) =>
+        sum + Number(item.prep_time) * Number(item.quantity),
+      0
+    );
+
+    const activeOrders = new Set(
+      items.map((item) => item.order_id)
+    ).size;
+
+    const activeItems = items.reduce(
+      (sum, item) => sum + Number(item.quantity),
+      0
+    );
+
+    const estimatedWorkloadMinutes = Math.ceil(
+      totalWorkMinutes / kitchenCapacity
+    );
+
+    const kitchenStatus =
+      estimatedWorkloadMinutes >= 30
+        ? "Busy"
+        : estimatedWorkloadMinutes >= 15
+        ? "Moderate"
+        : "Relaxed";
+
+    callback(null, {
+      active_orders: activeOrders,
+      active_items: activeItems,
+      total_work_minutes: totalWorkMinutes,
+      kitchen_capacity: kitchenCapacity,
+      estimated_workload_minutes: estimatedWorkloadMinutes,
+      kitchen_status: kitchenStatus
+    });
+  });
+}
+
+// =========================
+// KITCHEN PULSE - WORKLOAD API
+// =========================
+
+app.get(
+  "/api/kitchen-pulse",
+  authMiddleware,
+  adminMiddleware,
+  (req, res) => {
+    calculateKitchenWorkload((err, workload) => {
+      if (err) {
+        console.error("Kitchen Pulse error:", err);
 
         return res.status(500).json({
-          message: "Failed to find suitable meals"
+          message: "Failed to calculate kitchen workload"
         });
       }
 
-      // Reserve 5 minutes for pickup and unexpected delays
-      const safetyBuffer = 5;
-
-      const recommendations = foods
-        .map((food) => {
-          const estimatedMinutes =
-            Number(food.prep_time) +
-            queueDelay +
-            safetyBuffer;
-
-          return {
-            ...food,
-            estimated_minutes: estimatedMinutes,
-            fits_break: estimatedMinutes <= breakMinutes
-          };
-        })
-        .filter((food) => food.fits_break)
-        .sort(
-          (a, b) =>
-            a.estimated_minutes - b.estimated_minutes
-        )
-        .slice(0, 5);
-
-      res.json({
-        break_minutes: breakMinutes,
-        active_orders: activeOrders,
-        queue_delay: queueDelay,
-        safety_buffer: safetyBuffer,
-        recommendations,
-        message:
-          recommendations.length > 0
-            ? "Meals available within your break"
-            : "No meals currently fit your break time"
-      });
+      res.json(workload);
     });
-  });
-});
+  }
+);
 
 // =========================
 // SMART MEAL RECOMMENDATION
