@@ -8177,3 +8177,260 @@ main {
   font-size: 11px;
   line-height: 1.4;
 }
+/* =========================
+   BREAKSYNC
+========================= */
+
+.breaksync {
+  margin: 28px 0;
+  padding: 28px;
+  border: 1px solid #f1e3d8;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #fff7ef, #ffffff 70%);
+}
+
+.breaksync-header {
+  margin-bottom: 22px;
+}
+
+.breaksync-eyebrow {
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.breaksync-header h2 {
+  margin: 10px 0;
+  font-size: clamp(23px, 3vw, 30px);
+  color: var(--text-primary);
+}
+
+.breaksync-header p {
+  max-width: 540px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.breaksync-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.breaksync-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.breaksync-time {
+  padding: 10px 17px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: white;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.breaksync-time:hover {
+  border-color: var(--primary);
+}
+
+.breaksync-time.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.breaksync-find-button {
+  margin-top: 5px;
+  padding: 13px 22px;
+  border: none;
+  border-radius: 11px;
+  background: var(--primary);
+  color: white;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.breaksync-find-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.breaksync-results {
+  margin-top: 25px;
+}
+
+.breaksync-results-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.breaksync-results-heading span {
+  color: var(--primary);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.breaksync-results-heading h3 {
+  margin: 6px 0 0;
+  font-size: 19px;
+}
+
+.breaksync-results-heading small {
+  max-width: 220px;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.breaksync-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.breaksync-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: white;
+}
+
+.breaksync-image {
+  height: 135px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-soft);
+}
+
+.breaksync-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.breaksync-image > span {
+  font-size: 35px;
+}
+
+.breaksync-card-info {
+  padding: 15px;
+}
+
+.breaksync-category {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.breaksync-card-info h3 {
+  margin: 5px 0 10px;
+  font-size: 15px;
+}
+
+.breaksync-estimate {
+  display: inline-block;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #eaf7ee;
+  color: #15803d;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.breaksync-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.breaksync-card-bottom strong {
+  font-size: 17px;
+}
+
+.breaksync-add-button {
+  padding: 9px 13px;
+  border: none;
+  border-radius: 9px;
+  background: var(--primary);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.breaksync-quantity {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.breaksync-quantity button {
+  width: 29px;
+  height: 29px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+}
+
+.breaksync-message,
+.breaksync-empty,
+.breaksync-error {
+  padding: 20px;
+  border-radius: 12px;
+  background: white;
+  color: var(--text-secondary);
+}
+
+.breaksync-error {
+  color: var(--danger);
+}
+
+.breaksync-disclaimer {
+  margin-top: 14px;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+@media (max-width: 800px) {
+  .breaksync-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .breaksync {
+    padding: 18px;
+  }
+
+  .breaksync-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .breaksync-results-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .breaksync-results-heading small {
+    text-align: left;
+  }
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import API_URL from "../config/api";
+import BreakSync from "../components/BreakSync";
 
 function Home() {
     const [popularFoods, setPopularFoods] = useState([]);
@@ -108,7 +109,12 @@ function getFoodEmoji(name) {
           </div>
         </div>
       </section>
+      
+      {/* =========================
+          BREAKSYNC
+      ========================= */}
 
+      <BreakSync />
 
       {/* =========================
           BENEFITS

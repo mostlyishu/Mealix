@@ -52,6 +52,105 @@ app.get("/api/foods", (req, res) => {
 });
 
 // =========================
+// BREAKSYNC RECOMMENDATIONS
+// =========================
+
+app.get("/api/breaksync", (req, res) => {
+  const breakMinutes = Number(req.query.minutes);
+
+  if (
+    !Number.isInteger(breakMinutes) ||
+    breakMinutes < 5 ||
+    breakMinutes > 180
+  ) {
+    return res.status(400).json({
+      message: "Break time must be between 5 and 180 minutes"
+    });
+  }
+
+  // Count orders currently waiting in the kitchen
+  const queueSql = `
+    SELECT COUNT(*) AS active_orders
+    FROM orders
+    WHERE status IN ('Pending', 'Preparing')
+  `;
+
+  db.query(queueSql, (queueErr, queueResults) => {
+    if (queueErr) {
+      console.error(queueErr);
+
+      return res.status(500).json({
+        message: "Failed to check kitchen queue"
+      });
+    }
+
+    const activeOrders = Number(queueResults[0].active_orders);
+
+    // Initial approximation: 3 minutes per active order
+    const queueDelay = activeOrders * 3;
+
+    const foodSql = `
+      SELECT
+        id,
+        name,
+        price,
+        category,
+        image_url,
+        meal_type,
+        prep_time
+      FROM foods
+      WHERE available = 1
+      ORDER BY prep_time ASC
+    `;
+
+    db.query(foodSql, (foodErr, foods) => {
+      if (foodErr) {
+        console.error(foodErr);
+
+        return res.status(500).json({
+          message: "Failed to find suitable meals"
+        });
+      }
+
+      // Reserve 5 minutes for pickup and unexpected delays
+      const safetyBuffer = 5;
+
+      const recommendations = foods
+        .map((food) => {
+          const estimatedMinutes =
+            Number(food.prep_time) +
+            queueDelay +
+            safetyBuffer;
+
+          return {
+            ...food,
+            estimated_minutes: estimatedMinutes,
+            fits_break: estimatedMinutes <= breakMinutes
+          };
+        })
+        .filter((food) => food.fits_break)
+        .sort(
+          (a, b) =>
+            a.estimated_minutes - b.estimated_minutes
+        )
+        .slice(0, 5);
+
+      res.json({
+        break_minutes: breakMinutes,
+        active_orders: activeOrders,
+        queue_delay: queueDelay,
+        safety_buffer: safetyBuffer,
+        recommendations,
+        message:
+          recommendations.length > 0
+            ? "Meals available within your break"
+            : "No meals currently fit your break time"
+      });
+    });
+  });
+});
+
+// =========================
 // SMART MEAL RECOMMENDATION
 // =========================
 
@@ -1198,6 +1297,8 @@ db.query(
       message: "Food added successfully",
       foodId: result.insertId
     });
+  }
+);
   }
 );
 
