@@ -21,6 +21,18 @@ function Menu() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] =
     useState("All");
+    const [recommendationBudget, setRecommendationBudget] =
+        useState(100);
+    const [recommendations, setRecommendations] =
+        useState([]);
+    const [recommendationLoading, setRecommendationLoading] =
+        useState(false);
+    const [recommendationError, setRecommendationError] =
+        useState("");
+    const [showRecommendations, setShowRecommendations] =
+        useState(false);
+    const [mealPreference, setMealPreference] =
+        useState("popular");
 
   useEffect(() => {
     fetch(`${API_URL}/api/foods`)
@@ -59,6 +71,56 @@ function Menu() {
 
     return matchesSearch && matchesCategory;
   });
+  async function findMeal() {
+  try {
+    setRecommendationLoading(true);
+    setRecommendationError("");
+    setShowRecommendations(true);
+
+      const response = await fetch(
+          `${API_URL}/api/recommendations?maxPrice=${recommendationBudget}&preference=${mealPreference}`
+      );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message ||
+          "Failed to find meal recommendations"
+      );
+    }
+
+    setRecommendations(data.recommendations);
+  } catch (error) {
+    setRecommendations([]);
+    setRecommendationError(error.message);
+  } finally {
+    setRecommendationLoading(false);
+  }
+}
+function getRecommendationReason(food) {
+  if (mealPreference === "popular") {
+    if (Number(food.popularity) > 0) {
+      return "Popular with students";
+    }
+
+    return "Available within your budget";
+  }
+
+  if (mealPreference === "quick") {
+    return "Great for a quick campus bite";
+  }
+
+  if (mealPreference === "filling") {
+    return "A filling meal within your budget";
+  }
+
+  if (mealPreference === "beverage") {
+    return "A refreshing pick within your budget";
+  }
+
+  return "Recommended for you";
+}
 
 
   return (
@@ -78,7 +140,240 @@ function Menu() {
     Find your meal and skip the queue.
   </p>
 </section>
+{showRecommendations && (
+  <section className="meal-recommendation-results">
 
+    {recommendationError && (
+      <div className="meal-recommendation-empty">
+        <span>🍽️</span>
+
+        <div>
+          <strong>No meal found</strong>
+          <p>{recommendationError}</p>
+        </div>
+      </div>
+    )}
+
+    {!recommendationLoading &&
+      !recommendationError &&
+      recommendations.length > 0 && (
+        <>
+          <div className="meal-recommendation-heading">
+            <div>
+              <span>MEALIX RECOMMENDS</span>
+
+                                  <h3>
+                                      {mealPreference === "popular"
+                                          ? "Popular campus picks"
+                                          : mealPreference === "quick"
+                                              ? "Quick bites"
+                                              : mealPreference === "filling"
+                                                  ? "Filling meal picks"
+                                                  : "Refreshing beverage picks"}
+                                      {" "}under ₹{recommendationBudget}
+                                  </h3>
+            </div>
+
+            <small>
+              Ranked using campus order popularity
+            </small>
+          </div>
+
+          <div className="meal-recommendation-grid">
+            {recommendations
+              .slice(0, 3)
+              .map((food, index) => {
+                const cartItem = cart.find(
+                  (item) => item.id === food.id
+                );
+
+                const quantity =
+                  cartItem?.quantity || 0;
+
+                return (
+                  <article
+                    className="meal-recommendation-card"
+                    key={food.id}
+                  >
+                    {index === 0 && (
+                      <span className="best-pick-badge">
+                        ★ BEST PICK
+                      </span>
+                    )}
+
+                    <div className="meal-recommendation-image">
+                      {food.image_url ? (
+                        <img
+                          src={food.image_url}
+                          alt={food.name}
+                        />
+                      ) : (
+                        <span>🍽️</span>
+                      )}
+                    </div>
+
+                    <div className="meal-recommendation-info">
+                      <span>{food.category}</span>
+
+                      <h3>{food.name}</h3>
+
+                      <div className="meal-recommendation-meta">
+                        <strong>
+                          ₹{Number(food.price).toFixed(0)}
+                        </strong>
+
+                        <span>
+                          🔥 {Number(food.popularity)} ordered
+                        </span>
+                      </div>
+                            <div className="meal-recommendation-reason">
+                                <span>✓</span>
+                                {getRecommendationReason(food)}
+                            </div>
+
+                      {quantity > 0 ? (
+                        <div className="recommendation-quantity-control">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              decreaseQuantity(food.id)
+                            }
+                          >
+                            −
+                          </button>
+
+                          <span>{quantity}</span>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              increaseQuantity(food.id)
+                            }
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            addToCart(food)
+                          }
+                        >
+                          + Add to Cart
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+          </div>
+        </>
+      )}
+  </section>
+)}
+
+{/* SMART MEAL RECOMMENDER */}
+
+<section className="meal-recommender">
+  <div className="meal-recommender-content">
+    <span className="meal-recommender-eyebrow">
+      ✦ SMART MEAL PICK
+    </span>
+
+    <h2>Can't decide what to eat?</h2>
+
+    <p>
+      Set your budget and let Mealix find popular
+      campus picks that fit it.
+    </p>
+  </div>
+
+  <div className="meal-recommender-controls">
+    <div className="meal-preference-section">
+  <span className="meal-control-label">
+    WHAT ARE YOU LOOKING FOR?
+  </span>
+
+  <div className="meal-preference-options">
+    {[
+      {
+        value: "quick",
+        icon: "⚡",
+        label: "Quick Bite"
+      },
+      {
+        value: "filling",
+        icon: "🍽️",
+        label: "Filling"
+      },
+      {
+        value: "beverage",
+        icon: "🥤",
+        label: "Beverage"
+      },
+      {
+        value: "popular",
+        icon: "🔥",
+        label: "Popular"
+      }
+    ].map((option) => (
+      <button
+        type="button"
+        key={option.value}
+        className={
+          mealPreference === option.value
+            ? "meal-preference-button active"
+            : "meal-preference-button"
+        }
+        onClick={() =>
+          setMealPreference(option.value)
+        }
+      >
+        <span>{option.icon}</span>
+        {option.label}
+      </button>
+    ))}
+  </div>
+</div>
+
+<span className="meal-control-label">
+  YOUR BUDGET
+</span>
+
+    <div className="meal-budget-options">
+      {[50, 75, 100, 150].map((budget) => (
+        <button
+          type="button"
+          key={budget}
+          className={
+            recommendationBudget === budget
+              ? "meal-budget-button active"
+              : "meal-budget-button"
+          }
+          onClick={() =>
+            setRecommendationBudget(budget)
+          }
+        >
+          ₹{budget}
+        </button>
+      ))}
+    </div>
+
+    <button
+      type="button"
+      className="find-meal-button"
+      onClick={findMeal}
+      disabled={recommendationLoading}
+    >
+      {recommendationLoading
+        ? "Finding your meal..."
+        : "Find My Meal"}
+
+      {!recommendationLoading && <span>→</span>}
+    </button>
+  </div>
+</section>
 
       {/* SEARCH + FILTER */}
 

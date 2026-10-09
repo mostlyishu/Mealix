@@ -51,7 +51,130 @@ app.get("/api/foods", (req, res) => {
   });
 });
 
+// =========================
+// SMART MEAL RECOMMENDATION
+// =========================
 
+app.get("/api/recommendations", (req, res) => {
+  const maxPrice = Number(req.query.maxPrice);
+
+  const preference =
+    typeof req.query.preference === "string"
+      ? req.query.preference.toLowerCase()
+      : "popular";
+
+  const allowedPreferences = [
+    "popular",
+    "quick",
+    "filling",
+    "beverage"
+  ];
+
+  if (
+    !Number.isFinite(maxPrice) ||
+    maxPrice <= 0
+  ) {
+    return res.status(400).json({
+      message: "Please provide a valid budget"
+    });
+  }
+
+  if (!allowedPreferences.includes(preference)) {
+    return res.status(400).json({
+      message: "Invalid meal preference"
+    });
+  }
+
+  let sql = `
+    SELECT
+      foods.id,
+      foods.name,
+      foods.price,
+      foods.category,
+      foods.meal_type,
+      foods.available,
+      foods.image_url,
+
+      COALESCE(
+        SUM(
+          CASE
+            WHEN orders.status = 'Completed'
+            THEN order_items.quantity
+            ELSE 0
+          END
+        ),
+        0
+      ) AS popularity
+
+    FROM foods
+
+    LEFT JOIN order_items
+      ON foods.id = order_items.food_id
+
+    LEFT JOIN orders
+      ON order_items.order_id = orders.id
+
+    WHERE foods.available = 1
+      AND foods.price <= ?
+  `;
+
+  const queryValues = [maxPrice];
+
+  // Popular can use foods from every meal type.
+  // Other preferences filter by meal_type.
+  if (preference !== "popular") {
+    sql += `
+      AND foods.meal_type = ?
+    `;
+
+    queryValues.push(preference);
+  }
+
+  sql += `
+    GROUP BY
+      foods.id,
+      foods.name,
+      foods.price,
+      foods.category,
+      foods.meal_type,
+      foods.available,
+      foods.image_url
+
+    ORDER BY
+      popularity DESC,
+      foods.price DESC
+
+    LIMIT 5
+  `;
+
+  db.query(
+    sql,
+    queryValues,
+    (err, results) => {
+      if (err) {
+        console.error(err);
+
+        return res.status(500).json({
+          message:
+            "Failed to generate meal recommendations"
+        });
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({
+          message:
+            "No available meals match your preference and budget"
+        });
+      }
+
+      res.json({
+        budget: maxPrice,
+        preference,
+        recommendations: results
+      });
+    }
+  );
+});
 
 // =========================
 // ROOT
@@ -60,7 +183,6 @@ app.get("/api/foods", (req, res) => {
 app.get("/", (req, res) => {
   res.send("Mealix API is running!");
 });
-
 
 
 // =========================
@@ -995,7 +1117,8 @@ app.post(
       price,
       category,
       available,
-      image_url
+      image_url,
+      meal_type
     } = req.body;
 
     const cleanName =
@@ -1028,40 +1151,53 @@ if (
     message: "Price must be greater than 0"
   });
 }
+const allowedMealTypes = [
+  "quick",
+  "filling",
+  "beverage"
+];
 
+if (!allowedMealTypes.includes(meal_type)) {
+  return res.status(400).json({
+    message: "Please select a valid meal type"
+  });
+}
     const sql = `
   INSERT INTO foods
-  (name, price, category, available, image_url)
-  VALUES (?, ?, ?, ?, ?)
+  (
+    name,
+    price,
+    category,
+    available,
+    image_url,
+    meal_type
+  )
+  VALUES (?, ?, ?, ?, ?, ?)
 `;
 
-    db.query(
-      sql,
-        [
-            
-            cleanName,
-            numericPrice,
-            cleanCategory,
-            available ?? true,
-            image_url || null
+db.query(
+  sql,
+  [
+    cleanName,
+    numericPrice,
+    cleanCategory,
+    available ?? true,
+    image_url || null,
+    meal_type
+  ],
+  (err, result) => {
+    if (err) {
+      console.error(err);
 
-        ],
-        
-      (err, result) => {
-        if (err) {
-          console.error(err);
+      return res.status(500).json({
+        message: "Failed to add food"
+      });
+    }
 
-          return res.status(500).json({
-            message: "Failed to add food"
-          });
-        }
-
-        res.status(201).json({
-          message: "Food added successfully",
-          foodId: result.insertId
-        });
-      }
-    );
+    res.status(201).json({
+      message: "Food added successfully",
+      foodId: result.insertId
+    });
   }
 );
 
@@ -1083,7 +1219,8 @@ app.put(
           price,
           category,
           available,
-          image_url
+          image_url,
+          meal_type
       } = req.body;
 
     const cleanName =
@@ -1116,6 +1253,17 @@ if (
     message: "Price must be greater than 0"
   });
 }
+const allowedMealTypes = [
+  "quick",
+  "filling",
+  "beverage"
+];
+
+if (!allowedMealTypes.includes(meal_type)) {
+  return res.status(400).json({
+    message: "Please select a valid meal type"
+  });
+}
 
       const sql = `
   UPDATE foods
@@ -1124,7 +1272,9 @@ if (
     price = ?,
     category = ?,
     available = ?,
-    image_url = ?
+    image_url = ?,
+    meal_type = ?
+
   WHERE id = ?
 `;
 
@@ -1136,6 +1286,7 @@ if (
             cleanCategory,
             available,
             image_url || null,
+            meal_type,
             foodId
         ],
       (err, result) => {
@@ -1311,8 +1462,6 @@ app.patch(
     });
   }
 );
-
-
 
 // =========================
 // START SERVER

@@ -8,8 +8,10 @@ function AdminFoods() {
   const [price, setPrice] = useState("");
     const [category, setCategory] = useState("");
     const [imageUrl, setImageUrl] = useState("");
+    const [mealType, setMealType] = useState("quick");
     const [newCategory, setNewCategory] = useState("");
     const [isAddingCategory, setIsAddingCategory] = useState(false);
+    
 
     const [available, setAvailable] = useState(true);
 
@@ -55,6 +57,7 @@ function resetForm() {
   setIsAddingCategory(false);
   setAvailable(true);
   setImageUrl("");
+  setMealType("quick");
   setEditingId(null);
 }
 
@@ -94,7 +97,8 @@ function resetForm() {
           price,
           category: finalCategory,
           available,
-          image_url: imageUrl.trim()
+          image_url: imageUrl.trim(),
+          meal_type: mealType
         })
       });
 
@@ -129,6 +133,7 @@ function resetForm() {
 
       setAvailable(Number(food.available) === 1);
       setImageUrl(food.image_url || "");
+      setMealType(food.meal_type || "quick");
 
     setMessage("");
     setError("");
@@ -396,6 +401,37 @@ function resetForm() {
               />
             </div>
           </div>
+          
+          <div className="food-form-field">
+  <label htmlFor="food-meal-type">
+    Meal type
+  </label>
+
+  <select
+    id="food-meal-type"
+    value={mealType}
+    onChange={(event) =>
+      setMealType(event.target.value)
+    }
+    required
+  >
+    <option value="quick">
+      ⚡ Quick Bite
+    </option>
+
+    <option value="filling">
+      🍽️ Filling Meal
+    </option>
+
+    <option value="beverage">
+      🥤 Beverage
+    </option>
+  </select>
+
+  <small className="food-meal-type-help">
+    Used by Smart Meal Pick recommendations.
+  </small>
+</div> 
 
                   <div className="food-form-field food-image-field">
                       <label htmlFor="food-image">
