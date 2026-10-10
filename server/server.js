@@ -1,12 +1,14 @@
 require("dotenv").config();
 
 const mysql = require("mysql2");
+const mysqlPromise = require("mysql2/promise");
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const authMiddleware = require("./middleware/authMiddleware");
 const adminMiddleware = require("./middleware/adminMiddleware");
+const crypto = require("node:crypto");
 
 const app = express();
 
@@ -16,6 +18,17 @@ const db = mysql.createConnection({
   password: "",
   database: "mealix"
 });
+
+const transactionPool = mysqlPromise.createPool({
+  host: "localhost",
+  user: "root",
+  password: "",
+  database: "mealix",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
 
 db.connect((err) => {
   if (err) {
@@ -1627,6 +1640,743 @@ app.patch(
     });
   }
 );
+
+ // =========================
+ // GROUPBITE - CREATE GROUP
+ // =========================
+
+app.post("/api/groups", authMiddleware, (req, res) => {
+  // Use the authenticated user's ID, never an ID supplied by the client.
+  // Check the authMiddleware section to confirm your property name.
+  const hostUserId = req.user.id;
+
+  if (!hostUserId) {
+    return res.status(401).json({
+      message: "Please log in to create a group"
+    });
+  }
+
+  function generateGroupCode() {
+    const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+    let code = "";
+
+    for (let i = 0; i < 6; i++) {
+      code += characters[
+        crypto.randomInt(characters.length)
+      ];
+    }
+
+    return code;
+  }
+
+  function createGroup(attempt = 0) {
+    if (attempt >= 5) {
+      return res.status(503).json({
+        message: "Could not generate a unique group code. Try again."
+      });
+    }
+
+    const groupCode = generateGroupCode();
+
+    db.beginTransaction((transactionErr) => {
+      if (transactionErr) {
+        return res.status(500).json({
+          message: "Failed to start group creation"
+        });
+      }
+
+      db.query(
+        `INSERT INTO group_orders (group_code, host_user_id)
+         VALUES (?, ?)`,
+        [groupCode, hostUserId],
+        (groupErr, groupResult) => {
+          if (groupErr) {
+            return db.rollback(() => {
+              if (groupErr.code === "ER_DUP_ENTRY") {
+                return createGroup(attempt + 1);
+              }
+
+              console.error("GroupBite create error:", groupErr);
+
+              res.status(500).json({
+                message: "Failed to create group"
+              });
+            });
+          }
+
+          const groupId = groupResult.insertId;
+
+          db.query(
+            `INSERT INTO group_members (group_id, user_id)
+             VALUES (?, ?)`,
+            [groupId, hostUserId],
+            (memberErr) => {
+              if (memberErr) {
+                return db.rollback(() => {
+                  console.error("GroupBite member error:", memberErr);
+
+                  res.status(500).json({
+                    message: "Failed to add group host"
+                  });
+                });
+              }
+
+              db.commit((commitErr) => {
+                if (commitErr) {
+                  return db.rollback(() => {
+                    res.status(500).json({
+                      message: "Failed to finish group creation"
+                    });
+                  });
+                }
+
+                res.status(201).json({
+                  message: "Group created successfully",
+                  group: {
+                    id: groupId,
+                    group_code: groupCode,
+                    host_user_id: hostUserId,
+                    status: "Open"
+                  }
+                });
+              });
+            }
+          );
+        }
+      );
+    });
+  }
+
+  createGroup();
+});
+
+
+ // =========================
+ // GROUPBITE - JOIN GROUP
+ // =========================
+
+app.post("/api/groups/join", authMiddleware, (req, res) => {
+  const userId = req.user.id;
+
+  const groupCode =
+    typeof req.body?.group_code === "string"
+      ? req.body.group_code.trim().toUpperCase()
+      : "";
+
+  if (!/^[A-Z0-9]{6}$/.test(groupCode)) {
+    return res.status(400).json({
+      message: "Enter a valid 6-character group code"
+    });
+  }
+
+  // Find the group using its joining code
+  db.query(
+    `SELECT id, group_code, host_user_id, status
+     FROM group_orders
+     WHERE group_code = ?`,
+    [groupCode],
+    (groupErr, groups) => {
+      if (groupErr) {
+        console.error("GroupBite lookup error:", groupErr);
+
+        return res.status(500).json({
+          message: "Failed to find group"
+        });
+      }
+
+      if (groups.length === 0) {
+        return res.status(404).json({
+          message: "Group not found"
+        });
+      }
+
+      const group = groups[0];
+
+      if (group.status !== "Open") {
+        return res.status(409).json({
+          message: "This group is no longer accepting members"
+        });
+      }
+
+      // Prevent duplicate membership
+      db.query(
+        `INSERT IGNORE INTO group_members (group_id, user_id)
+         VALUES (?, ?)`,
+        [group.id, userId],
+        (memberErr, result) => {
+          if (memberErr) {
+            console.error("GroupBite join error:", memberErr);
+
+            return res.status(500).json({
+              message: "Failed to join group"
+            });
+          }
+
+          res.json({
+            message:
+              result.affectedRows === 0
+                ? "You are already a member of this group"
+                : "Joined group successfully",
+            group: {
+              id: group.id,
+              group_code: group.group_code,
+              host_user_id: group.host_user_id,
+              status: group.status
+            }
+          });
+        }
+      );
+    }
+  );
+});
+
+async function withOpenGroupCart(req, res, groupId, action) {
+  let connection;
+  let started = false;
+
+  try {
+    connection = await transactionPool.getConnection();
+    await connection.beginTransaction();
+    started = true;
+
+    // Checkout locks this same group row.
+    const [groups] = await connection.query(
+      `SELECT id, status
+       FROM group_orders
+       WHERE id = ?
+       FOR UPDATE`,
+      [groupId]
+    );
+
+    if (groups.length === 0 || groups[0].status !== "Open") {
+      await connection.rollback();
+      started = false;
+      return res.status(409).json({
+        message: "Group not found or already closed"
+      });
+    }
+
+    const [members] = await connection.query(
+      `SELECT id
+       FROM group_members
+       WHERE group_id = ? AND user_id = ?`,
+      [groupId, req.user.id]
+    );
+
+    if (members.length === 0) {
+      await connection.rollback();
+      started = false;
+      return res.status(403).json({
+        message: "You are not a group member"
+      });
+    }
+
+    const result = await action(connection);
+
+    if (result.status >= 400) {
+      await connection.rollback();
+      started = false;
+    } else {
+      await connection.commit();
+      started = false;
+    }
+
+    return res.status(result.status).json(result.body);
+
+  } catch (error) {
+    console.error("GroupBite cart transaction:", error);
+
+    if (connection && started) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error("Cart rollback failed:", rollbackError);
+      }
+    }
+
+    return res.status(500).json({
+      message: "Failed to update group cart"
+    });
+
+  } finally {
+    if (connection) connection.release();
+  }
+}
+
+
+ // =========================
+ // GROUPBITE - ADD TO SHARED CART
+ // =========================
+
+
+app.post("/api/groups/:groupId/items", authMiddleware, async (req, res) => {
+  const groupId = Number(req.params.groupId);
+  const foodId = Number(req.body?.food_id);
+  const quantity = Number(req.body?.quantity);
+  const userId = Number(req.user.id);
+
+  if (
+    !Number.isSafeInteger(groupId) || groupId <= 0 ||
+    !Number.isSafeInteger(foodId) || foodId <= 0 ||
+    !Number.isSafeInteger(quantity) ||
+    quantity < 1 || quantity > 20
+  ) {
+    return res.status(400).json({
+      message: "Invalid group, food, or quantity"
+    });
+  }
+
+  return withOpenGroupCart(req, res, groupId, async (connection) => {
+    const [foods] = await connection.query(
+      `SELECT id FROM foods
+       WHERE id = ? AND available = 1`,
+      [foodId]
+    );
+
+    if (foods.length === 0) {
+      return {
+        status: 409,
+        body: { message: "Food is unavailable" }
+      };
+    }
+
+    // Lock any existing item before updating its quantity.
+    const [existing] = await connection.query(
+      `SELECT id, quantity
+       FROM group_cart_items
+       WHERE group_id = ? AND user_id = ? AND food_id = ?
+       FOR UPDATE`,
+      [groupId, userId, foodId]
+    );
+
+    if (existing.length > 0) {
+      const newQuantity = Number(existing[0].quantity) + quantity;
+
+      if (newQuantity > 20) {
+        return {
+          status: 409,
+          body: { message: "Maximum 20 of the same food per student" }
+        };
+      }
+
+      await connection.query(
+        `UPDATE group_cart_items
+         SET quantity = ?
+         WHERE id = ?`,
+        [newQuantity, existing[0].id]
+      );
+    } else {
+      await connection.query(
+        `INSERT INTO group_cart_items
+         (group_id, user_id, food_id, quantity)
+         VALUES (?, ?, ?, ?)`,
+        [groupId, userId, foodId, quantity]
+      );
+    }
+
+    return {
+      status: 201,
+      body: { message: "Food added to group cart" }
+    };
+  });
+});
+
+ // =========================
+ // GROUPBITE - VIEW SHARED CART
+ // =========================
+
+app.get("/api/groups/:groupId/cart", authMiddleware, (req, res) => {
+  const groupId = Number(req.params.groupId);
+  const userId = req.user.id;
+
+  if (!Number.isSafeInteger(groupId) || groupId <= 0) {
+    return res.status(400).json({
+      message: "Invalid group ID"
+    });
+  }
+
+  db.query(
+    `SELECT g.id, g.group_code, g.host_user_id, g.status
+     FROM group_orders g
+     JOIN group_members gm ON gm.group_id = g.id
+     WHERE g.id = ? AND gm.user_id = ?`,
+    [groupId, userId],
+    (memberErr, groups) => {
+      if (memberErr) {
+        return res.status(500).json({
+          message: "Failed to verify group membership"
+        });
+      }
+
+      if (groups.length === 0) {
+        return res.status(403).json({
+          message: "You are not a member of this group"
+        });
+      }
+
+      db.query(
+        `SELECT
+           gci.id,
+           gci.user_id,
+           u.name AS added_by,
+           gci.food_id,
+           f.name AS food_name,
+           f.price,
+           f.available,
+           gci.quantity,
+           (f.price * gci.quantity) AS subtotal
+         FROM group_cart_items gci
+         JOIN users u ON u.id = gci.user_id
+         JOIN foods f ON f.id = gci.food_id
+         WHERE gci.group_id = ?
+         ORDER BY gci.id ASC`,
+        [groupId],
+        (cartErr, items) => {
+          if (cartErr) {
+            console.error("Group cart fetch error:", cartErr);
+
+            return res.status(500).json({
+              message: "Failed to fetch group cart"
+            });
+          }
+
+          const total = items.reduce(
+            (sum, item) => sum + Number(item.subtotal),
+            0
+          );
+
+          res.json({
+            group: groups[0],
+            items,
+            total_amount: Number(total.toFixed(2))
+          });
+        }
+      );
+    }
+  );
+});
+
+ // =========================
+ // GROUPBITE - UPDATE CART ITEM
+ // =========================
+
+
+app.patch("/api/groups/:groupId/items/:itemId", authMiddleware, async (req, res) => {
+  const groupId = Number(req.params.groupId);
+  const itemId = Number(req.params.itemId);
+  const quantity = Number(req.body?.quantity);
+  const userId = Number(req.user.id);
+
+  if (
+    !Number.isSafeInteger(groupId) || groupId <= 0 ||
+    !Number.isSafeInteger(itemId) || itemId <= 0 ||
+    !Number.isSafeInteger(quantity) ||
+    quantity < 1 || quantity > 20
+  ) {
+    return res.status(400).json({
+      message: "Invalid group, item, or quantity"
+    });
+  }
+
+  return withOpenGroupCart(req, res, groupId, async (connection) => {
+    const [result] = await connection.query(
+      `UPDATE group_cart_items
+       SET quantity = ?
+       WHERE id = ?
+         AND group_id = ?
+         AND user_id = ?`,
+      [quantity, itemId, groupId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return {
+        status: 403,
+        body: {
+          message: "Item not found or permission denied"
+        }
+      };
+    }
+
+    return {
+      status: 200,
+      body: {
+        message: "Item quantity updated",
+        quantity
+      }
+    };
+  });
+});
+
+ // =========================
+ // GROUPBITE - REMOVE CART ITEM
+ // =========================
+
+
+app.delete("/api/groups/:groupId/items/:itemId", authMiddleware, async (req, res) => {
+  const groupId = Number(req.params.groupId);
+  const itemId = Number(req.params.itemId);
+  const userId = Number(req.user.id);
+
+  if (
+    !Number.isSafeInteger(groupId) || groupId <= 0 ||
+    !Number.isSafeInteger(itemId) || itemId <= 0
+  ) {
+    return res.status(400).json({
+      message: "Invalid group or item ID"
+    });
+  }
+
+  return withOpenGroupCart(req, res, groupId, async (connection) => {
+    const [result] = await connection.query(
+      `DELETE FROM group_cart_items
+       WHERE id = ?
+         AND group_id = ?
+         AND user_id = ?`,
+      [itemId, groupId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return {
+        status: 403,
+        body: {
+          message: "Item not found or permission denied"
+        }
+      };
+    }
+
+    return {
+      status: 200,
+      body: { message: "Item removed from group cart" }
+    };
+  });
+});
+
+
+
+ // =========================
+ // GROUPBITE - HOST CHECKOUT
+ // =========================
+
+
+app.post("/api/groups/:groupId/checkout", authMiddleware, async (req, res) => {
+  const groupId = Number(req.params.groupId);
+  const userId = Number(req.user.id);
+
+  if (!Number.isSafeInteger(groupId) || groupId <= 0) {
+    return res.status(400).json({
+      message: "Invalid group ID"
+    });
+  }
+
+  let connection;
+  let transactionStarted = false;
+
+  try {
+    // Dedicated connection for this checkout.
+    connection = await transactionPool.getConnection();
+
+    await connection.beginTransaction();
+    transactionStarted = true;
+
+    // Lock the group to prevent two simultaneous checkouts.
+    const [groups] = await connection.query(
+      `SELECT id, host_user_id, status
+       FROM group_orders
+       WHERE id = ?
+       FOR UPDATE`,
+      [groupId]
+    );
+
+    if (groups.length === 0) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(404).json({
+        message: "Group not found"
+      });
+    }
+
+    const group = groups[0];
+
+    if (Number(group.host_user_id) !== userId) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(403).json({
+        message: "Only the group host can checkout"
+      });
+    }
+
+    if (group.status !== "Open") {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(409).json({
+        message: "This group has already been closed"
+      });
+    }
+
+    // Read the cart while holding the group lock.
+    // Aggregate quantities in JavaScript to avoid
+    // combining GROUP BY with FOR UPDATE.
+    const [cartRows] = await connection.query(
+      `SELECT food_id, quantity
+       FROM group_cart_items
+       WHERE group_id = ?
+       FOR UPDATE`,
+      [groupId]
+    );
+
+    if (cartRows.length === 0) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(400).json({
+        message: "The group cart is empty"
+      });
+    }
+
+    const quantities = new Map();
+
+    for (const row of cartRows) {
+      const foodId = Number(row.food_id);
+      const qty = Number(row.quantity);
+
+      quantities.set(
+        foodId,
+        (quantities.get(foodId) || 0) + qty
+      );
+    }
+
+    const foodIds = [...quantities.keys()];
+
+    // Use current database prices, not frontend prices.
+    const [foods] = await connection.query(
+      `SELECT id, name, price, available
+       FROM foods
+       WHERE id IN (?)
+       FOR UPDATE`,
+      [foodIds]
+    );
+
+    if (foods.length !== foodIds.length) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(409).json({
+        message: "Some food items no longer exist"
+      });
+    }
+
+    const invalid = foods.some((food) => {
+      const qty = quantities.get(Number(food.id));
+
+      return (
+        Number(food.available) !== 1 ||
+        !Number.isSafeInteger(qty) ||
+        qty <= 0 ||
+        qty > 100 ||
+        !Number.isFinite(Number(food.price)) ||
+        Number(food.price) <= 0
+      );
+    });
+
+    if (invalid) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(409).json({
+        message: "Some items are unavailable or have invalid quantities"
+      });
+    }
+
+    const totalAmount = Number(
+      foods.reduce(
+        (sum, food) =>
+          sum +
+          Number(food.price) *
+          quantities.get(Number(food.id)),
+        0
+      ).toFixed(2)
+    );
+
+    // Create one order owned by the group host.
+    const [orderResult] = await connection.query(
+      `INSERT INTO orders (user_id, total_amount)
+       VALUES (?, ?)`,
+      [userId, totalAmount]
+    );
+
+    const orderId = orderResult.insertId;
+
+    // Same token format as normal Mealix orders.
+    const pickupToken =
+      `MXL-${String(orderId).padStart(3, "0")}`;
+
+    await connection.query(
+      `UPDATE orders
+       SET pickup_token = ?
+       WHERE id = ?`,
+      [pickupToken, orderId]
+    );
+
+    const itemValues = foods.map((food) => [
+      orderId,
+      food.id,
+      quantities.get(Number(food.id)),
+      Number(food.price)
+    ]);
+
+    await connection.query(
+      `INSERT INTO order_items
+       (order_id, food_id, quantity, unit_price)
+       VALUES ?`,
+      [itemValues]
+    );
+
+    const [updateResult] = await connection.query(
+      `UPDATE group_orders
+       SET status = 'Placed',
+           final_order_id = ?
+       WHERE id = ?
+         AND status = 'Open'`,
+      [orderId, groupId]
+    );
+
+    if (updateResult.affectedRows !== 1) {
+      throw new Error("Failed to finalize group");
+    }
+
+    await connection.commit();
+    transactionStarted = false;
+
+    return res.status(201).json({
+      message: "Group order placed successfully",
+      group_id: groupId,
+      order_id: orderId,
+      pickup_token: pickupToken,
+      total_amount: totalAmount,
+      status: "Placed"
+    });
+
+  } catch (error) {
+    console.error("GroupBite checkout error:", error);
+
+    if (connection && transactionStarted) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error("Checkout rollback failed:", rollbackError);
+      }
+    }
+
+    return res.status(500).json({
+      message: "Failed to complete group checkout"
+    });
+
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+});
+
+
 
 // =========================
 // START SERVER

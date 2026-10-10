@@ -28,6 +28,12 @@ function Navbar() {
         <NavLink to="/menu" className={getNavClass}>
           Menu
         </NavLink>
+        
+              {isLoggedIn && user?.role === "student" && (
+                  <NavLink to="/groupbite" className={getNavClass}>
+                      GroupBite
+                  </NavLink>
+              )}
 
         {isLoggedIn && (
           <NavLink to="/orders" className={getNavClass}>
