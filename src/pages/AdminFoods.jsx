@@ -63,6 +63,12 @@ function resetForm() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+      if (saving) return;
+
+      if (!Number.isFinite(Number(price)) || Number(price) <= 0) {
+          setError("Please enter a valid price greater than ₹0.");
+          return;
+      }
 
     setError("");
     setMessage("");
@@ -401,7 +407,7 @@ function resetForm() {
               />
             </div>
           </div>
-          
+
           <div className="food-form-field">
   <label htmlFor="food-meal-type">
     Meal type
@@ -570,7 +576,13 @@ function resetForm() {
                           <div className="admin-food-placeholder">
                               {food.image_url ? (
                                   <img
-                                      src={food.image_url}
+                                      src={
+                                          food.image_url.startsWith("http")
+                                              ? food.image_url
+                                              : food.image_url.startsWith("/")
+                                                  ? food.image_url
+                                                  : `/${food.image_url}`
+                                      }
                                       alt={food.name}
                                       className="admin-food-image"
                                       onError={(event) => {

@@ -346,7 +346,7 @@ function Orders() {
                   : ""
               }`}
             >
-              {completed ? "✓" : index + 1}
+              {completed ? "✓" : active ? "●" : index + 1}
             </div>
 
             <span

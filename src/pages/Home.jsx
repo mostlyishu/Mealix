@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import API_URL from "../config/api";
 import BreakSync from "../components/BreakSync";
+import { useAuth } from "../context/AuthContext";
 
 function Home() {
+    const { isLoggedIn, user } = useAuth();
+    const isStudent = isLoggedIn && user?.role === "student";
     const [popularFoods, setPopularFoods] = useState([]);
 
 useEffect(() => {
@@ -115,6 +118,117 @@ function getFoodEmoji(name) {
       ========================= */}
 
       <BreakSync />
+      {/* =========================
+    GROUPBITE FEATURE
+========================= */}
+
+{!isLoggedIn || isStudent ? (
+  <section className="home-groupbite">
+    <div className="home-groupbite-content">
+      <div className="home-groupbite-tag">
+        <span className="home-groupbite-tag-dot" />
+        INTRODUCING GROUPBITE
+      </div>
+
+                      <h2>
+                          One Squad. One Cart.
+                          <span> Endless Cravings.</span>
+                      </h2>
+
+      <p>
+        Ordering with friends? Create a group, share
+        your invite code, and let everyone add their
+        favourite food to one shared cart.
+      </p>
+
+      <div className="home-groupbite-features">
+        <div>
+          <span>✓</span>
+          Shared cart
+        </div>
+
+        <div>
+          <span>✓</span>
+          One combined order
+        </div>
+
+        <div>
+          <span>✓</span>
+          One pickup token
+        </div>
+      </div>
+
+      <Link
+        to={isStudent ? "/groupbite" : "/login"}
+        className="home-groupbite-button"
+      >
+        {isStudent ? "Start Group Order" : "Login to Start"}
+        <span>→</span>
+      </Link>
+    </div>
+
+    <div className="home-groupbite-visual">
+      <div className="home-groupbite-demo">
+        <div className="home-groupbite-demo-top">
+          <span>GROUP ORDER</span>
+          <span className="home-groupbite-demo-status">
+            ● OPEN
+          </span>
+        </div>
+
+        <div className="home-groupbite-demo-code">
+          <small>INVITE YOUR FRIENDS</small>
+          <strong>AB7K2Q</strong>
+          <span>Example group code</span>
+        </div>
+
+        <div className="home-groupbite-demo-members">
+          <div className="home-groupbite-avatars">
+            <span>A</span>
+            <span>R</span>
+            <span>S</span>
+          </div>
+
+          <p>Everyone adds their favourites</p>
+        </div>
+
+        <div className="home-groupbite-demo-order">
+          <div>
+            <span>🍔</span>
+            <div>
+              <strong>Paneer Tikka Burger</strong>
+              <small>Added by A</small>
+            </div>
+          </div>
+
+          <span>× 2</span>
+        </div>
+
+        <div className="home-groupbite-demo-order">
+          <div>
+            <span>🥤</span>
+            <div>
+              <strong>Cold Coffee</strong>
+              <small>Added by R</small>
+            </div>
+          </div>
+
+          <span>× 1</span>
+        </div>
+
+        <div className="home-groupbite-demo-footer">
+          <span>One cart. One checkout.</span>
+          <span>↗</span>
+        </div>
+      </div>
+
+      <div className="home-groupbite-floating">
+        <span>✦</span>
+        Group ordering, simplified
+      </div>
+    </div>
+  </section>
+) : null}
 
       {/* =========================
           BENEFITS

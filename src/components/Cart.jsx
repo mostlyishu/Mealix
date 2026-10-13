@@ -31,6 +31,7 @@ function Cart() {
   );
 
   async function handlePlaceOrder() {
+    if (placingOrder) return;
     if (cart.length === 0) {
       setMessage("Your cart is empty.");
       return;
@@ -235,39 +236,39 @@ function Cart() {
                     <div className="cart-item-actions">
 
                       <div className="quantity-control">
-                        <button
-                          onClick={() =>
-                            decreaseQuantity(food.id)
-                          }
-                          aria-label={`Decrease ${food.name}`}
-                        >
-                          −
-                        </button>
+                                <button
+                                    type="button"
+                                    onClick={() => decreaseQuantity(food.id)}
+                                    disabled={placingOrder}
+                                    aria-label={`Decrease ${food.name}`}
+                                >
+                                    −
+                                </button>
 
                         <span>{food.quantity}</span>
 
-                        <button
-                          onClick={() =>
-                            increaseQuantity(food.id)
-                          }
-                          aria-label={`Increase ${food.name}`}
-                        >
-                          +
-                        </button>
+                                <button
+                                    type="button"
+                                    onClick={() => increaseQuantity(food.id)}
+                                    disabled={placingOrder}
+                                    aria-label={`Increase ${food.name}`}
+                                >
+                                    +
+                                </button>
                       </div>
 
                       <strong className="item-subtotal">
                         ₹{subtotal.toFixed(0)}
                       </strong>
 
-                      <button
-                        className="remove-item-button"
-                        onClick={() =>
-                          removeFromCart(food.id)
-                        }
-                      >
-                        Remove
-                      </button>
+                            <button
+                                type="button"
+                                className="remove-item-button"
+                                onClick={() => removeFromCart(food.id)}
+                                disabled={placingOrder}
+                            >
+                                Remove
+                            </button>
                     </div>
                   </article>
                 );

@@ -10,6 +10,7 @@ function AdminOrders() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [pulseRefreshKey, setPulseRefreshKey] = useState(0);
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
   useEffect(() => {
     fetchOrders();
@@ -90,6 +91,8 @@ function AdminOrders() {
   orderId,
   newStatus
 ) {
+      if (updatingOrderId !== null || !newStatus) return;
+      setUpdatingOrderId(orderId);
   try {
     setError("");
 
@@ -132,6 +135,9 @@ function AdminOrders() {
   } catch (error) {
     setError(error.message);
   }
+  finally {
+  setUpdatingOrderId(null);
+}
 }
 
 function getNextStatus(status) {
@@ -699,18 +705,21 @@ function getStatusActionLabel(status) {
     </div>
 
     <button
-      type="button"
-      className="admin-status-action-button"
-      onClick={() =>
-        updateStatus(
-          order.order_id,
-          getNextStatus(order.status)
-        )
-      }
-    >
-      {getStatusActionLabel(order.status)}
-      <span>→</span>
-    </button>
+  type="button"
+  className="admin-status-action-button"
+  disabled={updatingOrderId !== null}
+  onClick={() =>
+    updateStatus(
+      order.order_id,
+      getNextStatus(order.status)
+    )
+  }
+>
+  {updatingOrderId === order.order_id
+    ? "Updating..."
+    : getStatusActionLabel(order.status)}
+  <span>→</span>
+</button>
   </div>
 )}
 

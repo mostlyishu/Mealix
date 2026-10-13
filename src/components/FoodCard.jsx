@@ -1,3 +1,4 @@
+
 function FoodCard({
   id,
   name,
@@ -17,50 +18,48 @@ function FoodCard({
     if (foodName.includes("sandwich")) return "🥪";
     if (foodName.includes("coffee")) return "🥤";
     if (foodName.includes("maggi")) return "🍜";
+    if (foodName.includes("chowmein")) return "🍜";
+    if (foodName.includes("roll")) return "🌯";
 
     return "🍽️";
   };
 
   return (
-    <article
-      className={`food-card ${
-        !available ? "unavailable" : ""
-      }`}
-    >
-          <div className="food-image">
-              {imageUrl ? (
-                  <img
-                      src={imageUrl}
-                      alt={name}
-                      className="food-real-image"
-                      onError={(event) => {
-                          event.currentTarget.style.display = "none";
-                          event.currentTarget
-                              .nextElementSibling
-                              ?.classList.remove("hidden");
-                      }}
-                  />
-              ) : null}
+    <article className={`food-card ${!available ? "unavailable" : ""}`}>
+      <div className="food-image">
+        {imageUrl && (
+          <img
+            src={imageUrl}
+            alt={name}
+            className="food-real-image"
+            loading="lazy"
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+              event.currentTarget
+                .nextElementSibling
+                ?.classList.remove("hidden");
+            }}
+          />
+        )}
 
-              <div
-                  className={`food-image-placeholder ${imageUrl ? "hidden" : ""
-                      }`}
-              >
-                  {getFoodEmoji()}
-              </div>
+        <div
+          className={`food-image-placeholder ${
+            imageUrl ? "hidden" : ""
+          }`}
+        >
+          {getFoodEmoji()}
+        </div>
 
-              {!available && (
-                  <span className="food-unavailable-badge">
-                      Unavailable
-                  </span>
-              )}
-          </div>
+        <span className="food-image-category">{category}</span>
+
+        {!available && (
+          <span className="food-unavailable-badge">
+            Sold Out
+          </span>
+        )}
+      </div>
 
       <div className="food-card-content">
-        <span className="food-category">
-          {category}
-        </span>
-
         <h3>{name}</h3>
 
         <p className="food-card-description">
@@ -69,14 +68,12 @@ function FoodCard({
 
         <div className="food-bottom">
           <div className="food-price">
-            ₹{Number(price).toFixed(0)}
+            <small>PRICE</small>
+            <strong>₹{Number(price).toFixed(0)}</strong>
           </div>
 
           {!available ? (
-            <button
-              className="food-add-button"
-              disabled
-            >
+            <button className="food-add-button" disabled>
               Unavailable
             </button>
           ) : quantity > 0 ? (
@@ -101,6 +98,7 @@ function FoodCard({
             </div>
           ) : (
             <button
+              type="button"
               className="food-add-button"
               onClick={onAdd}
             >

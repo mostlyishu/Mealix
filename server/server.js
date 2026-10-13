@@ -12,18 +12,17 @@ const crypto = require("node:crypto");
 
 const app = express();
 
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "mealix"
-});
+const dbConfig = {
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD ?? "",
+  database: process.env.DB_NAME || "mealix"
+};
+
+const db = mysql.createConnection(dbConfig);
 
 const transactionPool = mysqlPromise.createPool({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "mealix",
+  ...dbConfig,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -425,6 +424,8 @@ if (password.length > 72) {
   checkSql,
   [cleanEmail],
   async (err, results) => {
+    try {  
+
       if (err) {
         console.error(err);
 
@@ -444,10 +445,10 @@ if (password.length > 72) {
       const insertSql =
         "INSERT INTO users (name, email, password) VALUES (?, ?, ?)";
 
-      db.query(
-        insertSql,
-        [[cleanName, cleanEmail, hashedPassword]],
-        (err, result) => {
+        db.query(
+            insertSql,
+            [cleanName, cleanEmail, hashedPassword],
+            (err, result) => {
           if (err) {
             console.error(err);
 
@@ -462,6 +463,15 @@ if (password.length > 72) {
           });
         }
       );
+      } catch (error) {
+      console.error("Registration error:", error);
+
+      if (!res.headersSent) {
+        return res.status(500).json({
+          message: "Failed to register user"
+        });
+      }
+    }
     });
   } catch (error) {
     console.error(error);
@@ -513,6 +523,7 @@ if (typeof password !== "string") {
   sql,
   [cleanEmail],
   async (err, results) => {
+    try {
     if (err) {
       console.error(err);
 
@@ -562,6 +573,15 @@ if (typeof password !== "string") {
         role: user.role
       }
     });
+    } catch (error) {
+      console.error("Login error:", error);
+
+      if (!res.headersSent) {
+        return res.status(500).json({
+          message: "Login failed. Please try again."
+        });
+      }
+    }
   });
 });
 
@@ -584,22 +604,24 @@ app.get("/api/profile", authMiddleware, (req, res) => {
 // CREATE ORDER
 // =========================
 
-app.post("/api/orders", authMiddleware, (req, res) => {
+
+app.post("/api/orders", authMiddleware, async (req, res) => {
   const { items } = req.body;
 
-  // Check if cart is empty
-  if (!items || !Array.isArray(items) || items.length === 0) {
+  if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({
       message: "Cart is empty"
     });
   }
 
-  // Validate food IDs and quantities
   const invalidItem = items.some(
     (item) =>
-      !Number.isInteger(Number(item.food_id)) ||
-      !Number.isInteger(Number(item.quantity)) ||
-      Number(item.quantity) <= 0
+      !item ||
+      !Number.isSafeInteger(Number(item.food_id)) ||
+      Number(item.food_id) <= 0 ||
+      !Number.isSafeInteger(Number(item.quantity)) ||
+      Number(item.quantity) <= 0 ||
+      Number(item.quantity) > 20
   );
 
   if (invalidItem) {
@@ -608,224 +630,148 @@ app.post("/api/orders", authMiddleware, (req, res) => {
     });
   }
 
-  const userId = req.user.id;
-
-  // =========================
-  // NORMALIZE DUPLICATE ITEMS
-  // =========================
-
+  // Merge duplicate food IDs
   const itemMap = new Map();
 
-  items.forEach((item) => {
+  for (const item of items) {
     const foodId = Number(item.food_id);
     const quantity = Number(item.quantity);
 
-    if (itemMap.has(foodId)) {
-      itemMap.set(
-        foodId,
-        itemMap.get(foodId) + quantity
-      );
-    } else {
-      itemMap.set(foodId, quantity);
-    }
-  });
+    itemMap.set(
+      foodId,
+      (itemMap.get(foodId) || 0) + quantity
+    );
+  }
 
   const normalizedItems = Array.from(
     itemMap,
-    ([food_id, quantity]) => ({
-      food_id,
-      quantity
-    })
+    ([food_id, quantity]) => ({ food_id, quantity })
   );
 
-  // Get unique food IDs
-  const foodIds = normalizedItems.map(
-    (item) => item.food_id
-  );
+  if (
+    normalizedItems.length > 30 ||
+    normalizedItems.some((item) => item.quantity > 20)
+  ) {
+    return res.status(400).json({
+      message: "Maximum 20 of each food and 30 different foods per order"
+    });
+  }
 
-  // Get trusted food data directly from MySQL
-  const foodCheckSql = `
-    SELECT id, name, price, available
-    FROM foods
-    WHERE id IN (?)
-  `;
+  let connection;
 
-  db.query(
-    foodCheckSql,
-    [foodIds],
-    (err, foods) => {
-      if (err) {
-        console.error(err);
+  try {
+    connection = await transactionPool.getConnection();
 
-        return res.status(500).json({
-          message: "Failed to check food availability"
-        });
-      }
+    await connection.beginTransaction();
 
-      // Make sure every requested food exists
-      if (foods.length !== foodIds.length) {
-        return res.status(400).json({
-          message: "One or more food items do not exist"
-        });
-      }
+    const foodIds = normalizedItems
+      .map((item) => item.food_id)
+      .sort((a, b) => a - b);
 
-      // Check whether any requested food is unavailable
-      const unavailableFoods = foods.filter(
-        (food) => Number(food.available) !== 1
-      );
+    const placeholders = foodIds.map(() => "?").join(",");
 
-      if (unavailableFoods.length > 0) {
-        const names = unavailableFoods
-          .map((food) => food.name)
-          .join(", ");
+    // Lock food rows until checkout finishes
+    const [foods] = await connection.query(
+      `SELECT id, name, price, available
+       FROM foods
+       WHERE id IN (${placeholders})
+       ORDER BY id
+       FOR UPDATE`,
+      foodIds
+    );
 
-        return res.status(409).json({
-          message: `${names} is currently unavailable`
-        });
-      }
+    if (foods.length !== foodIds.length) {
+      await connection.rollback();
 
-      // Calculate trusted total using MySQL prices
-      const calculatedTotal = normalizedItems.reduce(
-        (total, item) => {
-          const food = foods.find(
-            (food) => food.id === item.food_id
-          );
-
-          return (
-            total +
-            Number(food.price) * item.quantity
-          );
-        },
-        0
-      );
-
-      // Start transaction
-      db.beginTransaction((err) => {
-        if (err) {
-          console.error(err);
-
-          return res.status(500).json({
-            message: "Failed to start order transaction"
-          });
-        }
-
-        const orderSql = `
-          INSERT INTO orders (user_id, total_amount)
-          VALUES (?, ?)
-        `;
-
-        // Create the order
-        db.query(
-          orderSql,
-          [userId, calculatedTotal],
-          (err, orderResult) => {
-            if (err) {
-              return db.rollback(() => {
-                console.error(err);
-
-                res.status(500).json({
-                  message: "Failed to create order"
-                });
-              });
-            }
-
-            // Get newly created order ID
-            const orderId = orderResult.insertId;
-
-            // Generate pickup token
-            // Example: order ID 18 -> MXL-018
-            const pickupToken =
-              `MXL-${String(orderId).padStart(3, "0")}`;
-
-            // Save pickup token
-            const tokenSql = `
-              UPDATE orders
-              SET pickup_token = ?
-              WHERE id = ?
-            `;
-
-            db.query(
-              tokenSql,
-              [pickupToken, orderId],
-              (err) => {
-                if (err) {
-                  return db.rollback(() => {
-                    console.error(err);
-
-                    res.status(500).json({
-                      message:
-                        "Failed to generate pickup token"
-                    });
-                  });
-                }
-
-                // Prepare NORMALIZED order items
-// Store the price at the time the order is placed
-const itemValues = normalizedItems.map((item) => {
-  const food = foods.find(
-    (food) => food.id === item.food_id
-  );
-
-  return [
-    orderId,
-    item.food_id,
-    item.quantity,
-    Number(food.price)
-  ];
-});
-
-const itemSql = `
-  INSERT INTO order_items
-  (order_id, food_id, quantity, unit_price)
-  VALUES ?
-`;
-
-                // Save all order items
-                db.query(
-                  itemSql,
-                  [itemValues],
-                  (err) => {
-                    if (err) {
-                      return db.rollback(() => {
-                        console.error(err);
-
-                        res.status(500).json({
-                          message:
-                            "Failed to save order items"
-                        });
-                      });
-                    }
-
-                    // Everything worked
-                    db.commit((err) => {
-                      if (err) {
-                        return db.rollback(() => {
-                          console.error(err);
-
-                          res.status(500).json({
-                            message:
-                              "Failed to complete order"
-                          });
-                        });
-                      }
-
-                      res.status(201).json({
-                        message:
-                          "Order placed successfully",
-                        orderId,
-                        pickupToken
-                      });
-                    });
-                  }
-                );
-              }
-            );
-          }
-        );
+      return res.status(400).json({
+        message: "One or more food items do not exist"
       });
     }
-  );
+
+    const unavailableFoods = foods.filter(
+      (food) => Number(food.available) !== 1
+    );
+
+    if (unavailableFoods.length > 0) {
+      await connection.rollback();
+
+      return res.status(409).json({
+        message: `${unavailableFoods.map((f) => f.name).join(", ")} is currently unavailable`
+      });
+    }
+
+    const foodMap = new Map(
+      foods.map((food) => [Number(food.id), food])
+    );
+
+    // Never trust prices sent from the frontend
+    const calculatedTotal = normalizedItems.reduce(
+      (total, item) =>
+        total +
+        Number(foodMap.get(item.food_id).price) * item.quantity,
+      0
+    );
+
+    const [orderResult] = await connection.query(
+      `INSERT INTO orders (user_id, total_amount)
+       VALUES (?, ?)`,
+      [req.user.id, calculatedTotal]
+    );
+
+    const orderId = orderResult.insertId;
+
+    const pickupToken =
+      `MXL-${String(orderId).padStart(3, "0")}`;
+
+    await connection.query(
+      `UPDATE orders SET pickup_token = ? WHERE id = ?`,
+      [pickupToken, orderId]
+    );
+
+    const itemValues = normalizedItems.map((item) => [
+      orderId,
+      item.food_id,
+      item.quantity,
+      Number(foodMap.get(item.food_id).price)
+    ]);
+
+    await connection.query(
+      `INSERT INTO order_items
+       (order_id, food_id, quantity, unit_price)
+       VALUES ?`,
+      [itemValues]
+    );
+
+    await connection.commit();
+
+    return res.status(201).json({
+      message: "Order placed successfully",
+      orderId,
+      pickupToken
+    });
+
+  } catch (error) {
+    console.error("Checkout error:", error);
+
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error("Rollback error:", rollbackError);
+      }
+    }
+
+    return res.status(500).json({
+      message: "Failed to place order"
+    });
+
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
 });
+
 
 // =========================
 // STUDENT ORDERS
@@ -1645,9 +1591,8 @@ app.patch(
  // GROUPBITE - CREATE GROUP
  // =========================
 
-app.post("/api/groups", authMiddleware, (req, res) => {
-  // Use the authenticated user's ID, never an ID supplied by the client.
-  // Check the authMiddleware section to confirm your property name.
+
+app.post("/api/groups", authMiddleware, async (req, res) => {
   const hostUserId = req.user.id;
 
   if (!hostUserId) {
@@ -1658,105 +1603,88 @@ app.post("/api/groups", authMiddleware, (req, res) => {
 
   function generateGroupCode() {
     const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
     let code = "";
 
     for (let i = 0; i < 6; i++) {
-      code += characters[
-        crypto.randomInt(characters.length)
-      ];
+      code += characters[crypto.randomInt(characters.length)];
     }
 
     return code;
   }
 
-  function createGroup(attempt = 0) {
-    if (attempt >= 5) {
-      return res.status(503).json({
-        message: "Could not generate a unique group code. Try again."
+  for (let attempt = 0; attempt < 5; attempt++) {
+    let connection;
+
+    try {
+      connection = await transactionPool.getConnection();
+      await connection.beginTransaction();
+
+      const groupCode = generateGroupCode();
+
+      const [groupResult] = await connection.query(
+        `INSERT INTO group_orders (group_code, host_user_id)
+         VALUES (?, ?)`,
+        [groupCode, hostUserId]
+      );
+
+      const groupId = groupResult.insertId;
+
+      await connection.query(
+        `INSERT INTO group_members (group_id, user_id)
+         VALUES (?, ?)`,
+        [groupId, hostUserId]
+      );
+
+      await connection.commit();
+
+      return res.status(201).json({
+        message: "Group created successfully",
+        group: {
+          id: groupId,
+          group_code: groupCode,
+          host_user_id: hostUserId,
+          status: "Open"
+        }
       });
-    }
 
-    const groupCode = generateGroupCode();
+    } catch (error) {
+      if (connection) {
+        try {
+          await connection.rollback();
+        } catch (rollbackError) {
+          console.error("Group rollback error:", rollbackError);
+        }
+      }
 
-    db.beginTransaction((transactionErr) => {
-      if (transactionErr) {
-        return res.status(500).json({
-          message: "Failed to start group creation"
+      // Retry only if the generated code already exists.
+      if (error.code === "ER_DUP_ENTRY") {
+        if (attempt < 4) continue;
+
+        return res.status(503).json({
+          message: "Could not generate a unique group code. Try again."
         });
       }
 
-      db.query(
-        `INSERT INTO group_orders (group_code, host_user_id)
-         VALUES (?, ?)`,
-        [groupCode, hostUserId],
-        (groupErr, groupResult) => {
-          if (groupErr) {
-            return db.rollback(() => {
-              if (groupErr.code === "ER_DUP_ENTRY") {
-                return createGroup(attempt + 1);
-              }
+      console.error("GroupBite create error:", error);
 
-              console.error("GroupBite create error:", groupErr);
+      return res.status(500).json({
+        message: "Failed to create group"
+      });
 
-              res.status(500).json({
-                message: "Failed to create group"
-              });
-            });
-          }
-
-          const groupId = groupResult.insertId;
-
-          db.query(
-            `INSERT INTO group_members (group_id, user_id)
-             VALUES (?, ?)`,
-            [groupId, hostUserId],
-            (memberErr) => {
-              if (memberErr) {
-                return db.rollback(() => {
-                  console.error("GroupBite member error:", memberErr);
-
-                  res.status(500).json({
-                    message: "Failed to add group host"
-                  });
-                });
-              }
-
-              db.commit((commitErr) => {
-                if (commitErr) {
-                  return db.rollback(() => {
-                    res.status(500).json({
-                      message: "Failed to finish group creation"
-                    });
-                  });
-                }
-
-                res.status(201).json({
-                  message: "Group created successfully",
-                  group: {
-                    id: groupId,
-                    group_code: groupCode,
-                    host_user_id: hostUserId,
-                    status: "Open"
-                  }
-                });
-              });
-            }
-          );
-        }
-      );
-    });
+    } finally {
+      if (connection) {
+        connection.release();
+      }
+    }
   }
-
-  createGroup();
 });
-
 
  // =========================
  // GROUPBITE - JOIN GROUP
  // =========================
 
-app.post("/api/groups/join", authMiddleware, (req, res) => {
+
+app.post("/api/groups/join", authMiddleware, async (req, res) => {
   const userId = req.user.id;
 
   const groupCode =
@@ -1770,65 +1698,77 @@ app.post("/api/groups/join", authMiddleware, (req, res) => {
     });
   }
 
-  // Find the group using its joining code
-  db.query(
-    `SELECT id, group_code, host_user_id, status
-     FROM group_orders
-     WHERE group_code = ?`,
-    [groupCode],
-    (groupErr, groups) => {
-      if (groupErr) {
-        console.error("GroupBite lookup error:", groupErr);
+  let connection;
 
-        return res.status(500).json({
-          message: "Failed to find group"
-        });
-      }
+  try {
+    connection = await transactionPool.getConnection();
+    await connection.beginTransaction();
 
-      if (groups.length === 0) {
-        return res.status(404).json({
-          message: "Group not found"
-        });
-      }
+    const [groups] = await connection.query(
+      `SELECT id, group_code, host_user_id, status
+       FROM group_orders
+       WHERE group_code = ?
+       FOR UPDATE`,
+      [groupCode]
+    );
 
-      const group = groups[0];
-
-      if (group.status !== "Open") {
-        return res.status(409).json({
-          message: "This group is no longer accepting members"
-        });
-      }
-
-      // Prevent duplicate membership
-      db.query(
-        `INSERT IGNORE INTO group_members (group_id, user_id)
-         VALUES (?, ?)`,
-        [group.id, userId],
-        (memberErr, result) => {
-          if (memberErr) {
-            console.error("GroupBite join error:", memberErr);
-
-            return res.status(500).json({
-              message: "Failed to join group"
-            });
-          }
-
-          res.json({
-            message:
-              result.affectedRows === 0
-                ? "You are already a member of this group"
-                : "Joined group successfully",
-            group: {
-              id: group.id,
-              group_code: group.group_code,
-              host_user_id: group.host_user_id,
-              status: group.status
-            }
-          });
-        }
-      );
+    if (groups.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({
+        message: "Group not found"
+      });
     }
-  );
+
+    const group = groups[0];
+
+    if (group.status !== "Open") {
+      await connection.rollback();
+      return res.status(409).json({
+        message: "This group is no longer accepting members"
+      });
+    }
+
+    const [result] = await connection.query(
+      `INSERT IGNORE INTO group_members (group_id, user_id)
+       VALUES (?, ?)`,
+      [group.id, userId]
+    );
+
+    await connection.commit();
+
+    return res.json({
+      message:
+        result.affectedRows === 0
+          ? "You are already a member of this group"
+          : "Joined group successfully",
+      group: {
+        id: group.id,
+        group_code: group.group_code,
+        host_user_id: group.host_user_id,
+        status: group.status
+      }
+    });
+
+  } catch (error) {
+    console.error("GroupBite join error:", error);
+
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error("Rollback error:", rollbackError);
+      }
+    }
+
+    return res.status(500).json({
+      message: "Failed to join group"
+    });
+
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
 });
 
 async function withOpenGroupCart(req, res, groupId, action) {

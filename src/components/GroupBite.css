@@ -1383,3 +1383,276 @@
     width: fit-content;
   }
 }
+
+/* ==========================================
+   GROUPBITE — FINAL MOBILE REFINEMENTS
+========================================== */
+
+.gb-page {
+  min-width: 0;
+}
+
+.gb-workspace,
+.gb-workspace-main,
+.gb-panel,
+.gb-summary-column {
+  min-width: 0;
+}
+
+.gb-page button {
+  touch-action: manipulation;
+}
+
+.gb-page button:focus-visible,
+.gb-page input:focus-visible {
+  outline: 3px solid rgba(227, 83, 54, 0.35);
+  outline-offset: 3px;
+}
+
+/* Tablet: keep the checkout summary below the cart */
+
+@media (max-width: 960px) {
+  .gb-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gb-summary-column {
+    position: static;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 700px) {
+  .gb-page {
+    padding: 24px 14px 110px;
+  }
+
+  .gb-heading {
+    margin-bottom: 28px;
+  }
+
+  .gb-heading h1 {
+    font-size: clamp(32px, 9vw, 43px);
+    letter-spacing: -1.4px;
+    line-height: 1.12;
+  }
+
+  .gb-heading > p {
+    font-size: 13px;
+  }
+
+  .gb-hero-tags {
+    gap: 8px 12px;
+    font-size: 10px;
+  }
+
+  /* Create / Join */
+
+  .gb-options {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 15px;
+  }
+
+  .gb-option-card {
+    padding: 23px;
+    border-radius: 19px;
+    min-height: 0;
+  }
+
+  .gb-option-top {
+    margin-bottom: 20px;
+  }
+
+  .gb-option-icon {
+    width: 49px;
+    height: 49px;
+    font-size: 23px;
+  }
+
+  /* Invite banner */
+
+  .gb-session-banner {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 23px 19px;
+    gap: 20px;
+    border-radius: 19px;
+  }
+
+  .gb-session-details h2 {
+    font-size: 29px;
+  }
+
+  .gb-session-meta {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .gb-invite-card {
+    width: 100%;
+    min-width: 0;
+    padding: 18px;
+  }
+
+  .gb-code {
+    font-size: clamp(25px, 8vw, 34px);
+    letter-spacing: 3px;
+    overflow-wrap: anywhere;
+  }
+
+  .gb-copy-btn {
+    min-height: 44px;
+  }
+
+  /* Shared cart toolbar */
+
+  .gb-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .gb-toolbar-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .gb-toolbar-actions .gb-ghost-btn {
+    min-width: 0;
+    min-height: 43px;
+    padding: 9px 7px;
+    font-size: 11px;
+  }
+
+  /* Food selector */
+
+  .gb-panel,
+  .gb-summary-card {
+    padding: 19px;
+    border-radius: 17px;
+  }
+
+  .gb-food-grid {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: 420px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .gb-food-choice {
+    min-width: 0;
+  }
+
+  .gb-food-choice-info {
+    min-width: 0;
+  }
+
+  .gb-food-choice-info strong {
+    overflow-wrap: anywhere;
+  }
+
+  /* Quantity + Add button */
+
+  .gb-food-bottom {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 15px;
+  }
+
+  .gb-food-stepper {
+    width: fit-content;
+    min-height: 48px;
+  }
+
+  .gb-food-stepper button {
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .gb-food-submit {
+    width: 100%;
+    min-height: 50px;
+  }
+
+  /* Shared cart items */
+
+  .gb-cart-item {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 11px;
+  }
+
+  .gb-item-info {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .gb-item-info h3 {
+    overflow-wrap: anywhere;
+  }
+
+  .gb-item-actions {
+    width: 100%;
+    padding-left: 0;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .gb-qty-controls button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .gb-item-subtotal {
+    margin-left: auto;
+  }
+
+  /* Checkout summary */
+
+  .gb-summary-column {
+    position: static;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gb-summary-total strong {
+    font-size: 24px;
+  }
+
+  .gb-summary-card .gb-primary-btn {
+    min-height: 52px;
+  }
+}
+
+/* Extra-small phones */
+
+@media (max-width: 360px) {
+  .gb-page {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .gb-panel,
+  .gb-summary-card {
+    padding: 15px;
+  }
+
+  .gb-toolbar-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gb-item-actions {
+    justify-content: flex-start;
+  }
+
+  .gb-item-subtotal {
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gb-page button {
+    transition: none;
+  }
+}
