@@ -2384,7 +2384,31 @@ if (cleanKitchenNote.length > 300) {
     }
   }
 });
+// LIVE PICKUP BOARD — PUBLIC READ-ONLY API
 
+app.get("/api/pickup-board", (req, res) => {
+  const sql = `
+    SELECT
+      pickup_token,
+      status,
+      created_at
+    FROM orders
+    WHERE status IN ('Preparing', 'Ready')
+      AND pickup_token IS NOT NULL
+    ORDER BY created_at ASC, id ASC
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      console.error("Pickup board error:", err);
+      return res.status(500).json({
+        message: "Failed to load pickup board"
+      });
+    }
+
+    res.json(results);
+  });
+});
 
 
 // =========================

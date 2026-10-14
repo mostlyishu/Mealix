@@ -258,17 +258,35 @@ function getStatusActionLabel(status) {
           </p>
         </div>
 
-        <button
-          className="admin-v2-refresh"
-          onClick={refreshDashboard}
-          disabled={loading}
-        >
-          <span>↻</span>
+        
+<div className="admin-header-actions">
+  <button
+    type="button"
+    className="admin-live-board-btn"
+    onClick={() =>
+      window.open(
+        "/pickup-board",
+        "_blank",
+        "noopener,noreferrer"
+      )
+    }
+  >
+    <span>▣</span>
+    Open Live Board ↗
+  </button>
 
-          {loading
-            ? "Refreshing..."
-            : "Refresh Dashboard"}
-        </button>
+  <button
+    className="admin-v2-refresh"
+    onClick={refreshDashboard}
+    disabled={loading}
+  >
+    <span>↻</span>
+    {loading
+      ? "Refreshing..."
+      : "Refresh Dashboard"}
+  </button>
+</div>
+
       </section>
 
       {/* =========================

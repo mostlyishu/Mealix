@@ -10349,3 +10349,62 @@ main {
     font-size: 8px;
   }
 }
+
+/* ADMIN HEADER ACTIONS */
+
+.admin-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* LIVE PICKUP BOARD BUTTON */
+
+
+/* LIGHT MODE — LIVE BOARD BUTTON */
+
+.admin-live-board-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  padding: 13px 20px;
+  background: #ffffff;
+  color: #222222;
+
+  border: 1px solid #dce8df;
+  border-radius: 12px;
+
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+}
+
+/* Green icon */
+.admin-live-board-btn span {
+  color: #24965a;
+  font-size: 18px;
+}
+
+/* Subtle green hover */
+.admin-live-board-btn:hover {
+  background: #f3faf5;
+  border-color: #a5d6b4;
+  color: #176b3b;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 16px rgba(34, 139, 74, 0.08);
+}
+
+@media (max-width: 600px) {
+  .admin-header-actions {
+    width: 100%;
+  }
+
+  .admin-header-actions button {
+    flex: 1;
+  }
+}

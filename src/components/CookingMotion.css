@@ -1,0 +1,373 @@
+
+/* =====================================
+   MEALIX — FLOATING COOKING ANIMATIONS
+   Borderless / Dark / Compact
+===================================== */
+
+.cm-scene {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 175px;
+  margin: 18px auto 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cm-animation {
+  position: relative;
+  width: 260px;
+  height: 155px;
+}
+
+.cm-animation > div {
+  position: absolute;
+  inset: 0;
+}
+
+.cm-animation span {
+  position: absolute;
+  display: block;
+}
+
+@keyframes cm-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 1. CHOPPING */
+
+.cm-chop-board {
+  left: 56px;
+  top: 105px;
+  width: 150px;
+  height: 16px;
+  border-radius: 50%;
+  background: #a66b3b;
+  box-shadow: 0 5px 0 #704425;
+}
+
+.cm-chop-carrot {
+  left: 105px;
+  top: 73px;
+  font-size: 44px;
+  transform: rotate(65deg);
+}
+
+.cm-chop-knife {
+  left: 120px;
+  top: 15px;
+  font-size: 55px;
+  transform-origin: 75% 75%;
+  animation: cm-chop 0.7s ease-in-out infinite;
+}
+
+.cm-chop-piece {
+  top: 92px;
+  font-size: 17px;
+  opacity: 0;
+  animation: cm-chopped 1.4s ease-out infinite;
+}
+
+.cm-piece-one { left: 91px; }
+.cm-piece-two {
+  left: 152px;
+  animation-delay: 0.7s;
+}
+
+@keyframes cm-chop {
+  0%, 100% { transform: rotate(-25deg) translateY(-12px); }
+  50% { transform: rotate(5deg) translateY(8px); }
+}
+
+@keyframes cm-chopped {
+  0% { opacity: 0; transform: translateY(-10px) scale(0.5); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(7px) scale(0.75); }
+}
+
+/* 2. WOK TOSSING */
+
+.cm-wok {
+  left: 90px;
+  top: 61px;
+  font-size: 85px;
+  line-height: 1;
+  transform-origin: center;
+  animation: cm-toss 2.3s ease-in-out infinite;
+}
+
+.cm-ingredient {
+  left: 128px;
+  top: 72px;
+  font-size: 25px;
+  opacity: 0;
+  animation: cm-fly 2.3s ease-in-out infinite;
+}
+
+.cm-veg-one {
+  --fly-x: -55px;
+}
+
+.cm-veg-two {
+  --fly-x: 10px;
+  animation-delay: 0.25s;
+}
+
+.cm-veg-three {
+  --fly-x: 55px;
+  animation-delay: 0.5s;
+}
+
+.cm-steam {
+  left: 126px;
+  top: 26px;
+  color: #cda98e;
+  font-size: 26px;
+  opacity: 0;
+  animation: cm-steam-rise 2.5s ease-out infinite;
+}
+
+.cm-steam-two {
+  left: 152px;
+  animation-delay: 1.2s;
+}
+
+@keyframes cm-toss {
+  0%, 100% { transform: rotate(-12deg) translateY(8px); }
+  50% { transform: rotate(12deg) translateY(-8px); }
+}
+
+@keyframes cm-fly {
+  0%, 100% {
+    opacity: 0;
+    transform: translate(0, 12px) scale(0.7);
+  }
+  45% {
+    opacity: 1;
+    transform: translate(var(--fly-x), -52px) scale(1);
+  }
+  80% {
+    opacity: 0.8;
+    transform: translate(var(--fly-x), 0) scale(0.8);
+  }
+}
+
+@keyframes cm-steam-rise {
+  0% { opacity: 0; transform: translateY(22px); }
+  40% { opacity: 0.6; }
+  100% { opacity: 0; transform: translateY(-35px); }
+}
+
+/* 3. BURGER ASSEMBLY */
+
+.cm-burger-scene span {
+  left: 82px;
+  width: 100px;
+}
+
+.cm-burger-bottom {
+  top: 113px;
+  height: 18px;
+  background: #e5a44d;
+  border-radius: 5px 5px 20px 20px;
+  animation: cm-layer-in 4s ease-in-out infinite;
+}
+
+.cm-burger-patty {
+  top: 94px;
+  height: 20px;
+  background: #75402c;
+  border-radius: 12px;
+  animation: cm-layer-in 4s ease-in-out infinite;
+  animation-delay: 0.4s;
+}
+
+.cm-burger-cheese {
+  top: 83px;
+  height: 13px;
+  background: #f8c943;
+  border-radius: 4px;
+  animation: cm-layer-in 4s ease-in-out infinite;
+  animation-delay: 0.8s;
+}
+
+.cm-burger-lettuce {
+  top: 73px;
+  height: 13px;
+  background: #65a34e;
+  border-radius: 50%;
+  animation: cm-layer-in 4s ease-in-out infinite;
+  animation-delay: 1.2s;
+}
+
+.cm-burger-top {
+  top: 37px;
+  height: 39px;
+  background: linear-gradient(#f3bb69, #d98c37);
+  border-radius: 60px 60px 8px 8px;
+  animation: cm-layer-in 4s ease-in-out infinite;
+  animation-delay: 1.6s;
+}
+
+@keyframes cm-layer-in {
+  0%, 8% {
+    opacity: 0;
+    transform: translateY(-45px);
+  }
+  35%, 85% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+
+/* 4. PLATING */
+
+.cm-plate {
+  left: 94px;
+  top: 66px;
+  font-size: 78px;
+}
+
+.cm-plated-food {
+  left: 105px;
+  top: 44px;
+  font-size: 58px;
+  animation: cm-food-arrive 3s ease-in-out infinite;
+}
+
+.cm-garnish {
+  font-size: 26px;
+  animation: cm-garnish-fall 3s ease-in-out infinite;
+}
+
+.cm-garnish-one {
+  left: 143px;
+  top: 8px;
+}
+
+.cm-garnish-two {
+  left: 177px;
+  top: 29px;
+  animation-delay: 0.5s;
+}
+
+@keyframes cm-food-arrive {
+  0% { opacity: 0; transform: translateY(-30px); }
+  45%, 100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cm-garnish-fall {
+  0%, 30% { opacity: 0; transform: translateY(-20px); }
+  75%, 100% { opacity: 1; transform: translateY(45px); }
+}
+
+/* 5. SERVING */
+
+.cm-serving-tray {
+  left: 65px;
+  top: 121px;
+  width: 135px;
+  height: 12px;
+  background: linear-gradient(#b6b9bd, #666d74);
+  border-radius: 50%;
+  animation: cm-serving-slide 3.5s ease-in-out infinite;
+}
+
+.cm-serving-meal {
+  left: 99px;
+  top: 47px;
+  font-size: 72px;
+  animation: cm-serving-slide 3.5s ease-in-out infinite;
+}
+
+.cm-serving-sparkle {
+  left: 180px;
+  top: 24px;
+  font-size: 26px;
+  animation: cm-sparkle 1.5s ease-in-out infinite;
+}
+
+@keyframes cm-serving-slide {
+  0% { opacity: 0; transform: translateX(-90px); }
+  35%, 75% { opacity: 1; transform: translateX(0); }
+  100% { opacity: 0; transform: translateX(80px); }
+}
+
+@keyframes cm-sparkle {
+  50% { opacity: 0.35; transform: scale(1.3); }
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+  .cm-scene {
+    height: 145px;
+    margin-top: 12px;
+  }
+
+  .cm-animation {
+    transform: scale(0.85);
+    transform-origin: center;
+  }
+}
+
+/* REDUCED MOTION */
+
+@media (prefers-reduced-motion: reduce) {
+  .cm-animation,
+  .cm-animation span {
+    animation: none !important;
+  }
+}
+/* SMOOTH CINEMATIC SCENE TRANSITIONS */
+
+.cm-animation {
+  transition:
+    opacity 450ms ease-in-out,
+    translate 450ms ease-in-out;
+}
+
+.cm-animation.cm-fade-out {
+  opacity: 0;
+  translate: 0 8px;
+}
+
+.cm-animation.cm-fade-in {
+  opacity: 1;
+  translate: 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cm-animation {
+    transition: none;
+  }
+}
+/* Soft ambient lighting behind the animations */
+
+.cm-scene::before {
+  content: "";
+  position: absolute;
+  width: 240px;
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse,
+    rgba(251, 146, 60, 0.075),
+    transparent 72%
+  );
+  filter: blur(20px);
+  pointer-events: none;
+}
+
+.cm-animation {
+  z-index: 1;
+}

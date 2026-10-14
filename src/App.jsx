@@ -15,6 +15,7 @@ import AdminOrders from "./pages/AdminOrders";
 import AdminFoods from "./pages/AdminFoods";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import GroupBite from "./components/GroupBite";
+import PickupBoard from "./pages/PickupBoard";
 
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -69,6 +70,7 @@ function App() {
               }
             />
             <Route path="/groupbite" element={<GroupBite />} />
+            <Route path="/pickup-board" element={<PickupBoard />} />
           </Routes>
         </BrowserRouter>
       </CartProvider>
