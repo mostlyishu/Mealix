@@ -42,6 +42,7 @@ function GroupBite() {
   const [cartLoading, setCartLoading] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutResult, setCheckoutResult] = useState(null);
+  const [kitchenNote, setKitchenNote] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [copied, setCopied] = useState(false);
@@ -353,10 +354,15 @@ function GroupBite() {
     setMessage("");
 
     try {
-      const data = await apiRequest(
-        `/api/groups/${group.id}/checkout`,
-        { method: "POST" }
-      );
+        const data = await apiRequest(
+            `/api/groups/${group.id}/checkout`,
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    kitchen_note: kitchenNote.trim()
+                })
+            }
+        );
 
       setCheckoutResult(data);
       setMessage("Group order placed successfully!");
@@ -900,7 +906,25 @@ function GroupBite() {
                   One combined order · One pickup token ·
                   Pay at the counter
                 </p>
+                {isOpen && isHost && (
+  <div className="gb-kitchen-note">
+    <label htmlFor="gb-kitchen-note">
+      Special Instructions <span>(Optional)</span>
+    </label>
 
+    <textarea
+      id="gb-kitchen-note"
+      placeholder="e.g. Less spicy, no onions, extra crispy..."
+      value={kitchenNote}
+      onChange={(e) => setKitchenNote(e.target.value)}
+      maxLength={300}
+      rows={3}
+      disabled={checkoutLoading || loading || cartLoading}
+    />
+
+    <small>{kitchenNote.length}/300 characters</small>
+  </div>
+)}
                 {isOpen && isHost && (
                   <button
                     type="button"

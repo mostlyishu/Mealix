@@ -182,16 +182,16 @@ function getStatusActionLabel(status) {
   const groupedOrders = orders.reduce(
     (groups, item) => {
       if (!groups[item.order_id]) {
-        groups[item.order_id] = {
-          order_id: item.order_id,
-          customer_name: item.customer_name,
-          customer_email:
-            item.customer_email,
-          total_amount: item.total_amount,
-          status: item.status,
-          created_at: item.created_at,
-          items: []
-        };
+          groups[item.order_id] = {
+              order_id: item.order_id,
+              customer_name: item.customer_name,
+              customer_email: item.customer_email,
+              total_amount: item.total_amount,
+              status: item.status,
+              kitchen_note: item.kitchen_note,
+              created_at: item.created_at,
+              items: []
+          };
       }
 
       groups[item.order_id].items.push({
@@ -640,7 +640,24 @@ function getStatusActionLabel(status) {
                       )
                     )}
                   </div>
+          {/* Kitchen Instructions */}
 
+{order.kitchen_note?.trim() && (
+  <div className="admin-kitchen-instructions">
+    <div className="admin-kitchen-icon">
+      👨‍🍳
+    </div>
+
+    <div className="admin-kitchen-content">
+      <div className="admin-kitchen-header">
+        <strong>Special Instructions</strong>
+        <span>FROM STUDENT</span>
+      </div>
+
+      <p>{order.kitchen_note}</p>
+    </div>
+  </div>
+)}
                   {/* Total */}
 
                   <div className="admin-order-total-v2">

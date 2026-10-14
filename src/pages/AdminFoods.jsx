@@ -6,6 +6,7 @@ function AdminFoods() {
 
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
     const [category, setCategory] = useState("");
     const [imageUrl, setImageUrl] = useState("");
     const [mealType, setMealType] = useState("quick");
@@ -52,6 +53,7 @@ function AdminFoods() {
 function resetForm() {
   setName("");
   setPrice("");
+  setDescription("");
   setCategory("");
   setNewCategory("");
   setIsAddingCategory(false);
@@ -104,7 +106,8 @@ function resetForm() {
           category: finalCategory,
           available,
           image_url: imageUrl.trim(),
-          meal_type: mealType
+          meal_type: mealType,
+          description: description.trim()
         })
       });
 
@@ -133,6 +136,7 @@ function resetForm() {
     setEditingId(food.id);
     setName(food.name);
     setPrice(food.price);
+    setDescription(food.description || "");
       setCategory(food.category);
       setNewCategory("");
       setIsAddingCategory(false);
@@ -321,6 +325,32 @@ function resetForm() {
               required
             />
           </div>
+          <div className="food-form-field food-description-field">
+  <label htmlFor="food-description">
+    Dish Description
+  </label>
+
+  <textarea
+    id="food-description"
+    placeholder="e.g. Crispy golden potato bites tossed in a tangy chilli-garlic glaze, finished with fresh spring onions."
+    value={description}
+    onChange={(event) =>
+      setDescription(event.target.value)
+    }
+    maxLength={500}
+    rows={3}
+  />
+
+  <div className="food-description-meta">
+    <small>
+      Give students a delicious reason to try this dish.
+    </small>
+
+    <small>
+      {description.length}/500
+    </small>
+  </div>
+</div>
 
                   <div className="food-form-field">
                       <label htmlFor="food-category">
@@ -615,6 +645,11 @@ function resetForm() {
                     </span>
 
                     <h3>{food.name}</h3>
+                          {food.description && (
+                              <p className="admin-food-description">
+                                  {food.description}
+                              </p>
+                          )}
 
                     <strong className="admin-food-price">
                       ₹{Number(food.price).toFixed(0)}

@@ -4,6 +4,7 @@ function FoodCard({
   name,
   price,
   category,
+  description,
   available,
   imageUrl,
   quantity,
@@ -62,9 +63,11 @@ function FoodCard({
       <div className="food-card-content">
         <h3>{name}</h3>
 
-        <p className="food-card-description">
-          Freshly prepared for your campus break.
-        </p>
+              {description?.trim() && (
+                  <p className="food-card-description">
+                      {description}
+                  </p>
+              )}
 
         <div className="food-bottom">
           <div className="food-price">

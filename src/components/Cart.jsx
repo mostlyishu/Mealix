@@ -18,6 +18,7 @@ function Cart() {
 
   const [message, setMessage] = useState("");
   const [placingOrder, setPlacingOrder] = useState(false);
+  const [kitchenNote, setKitchenNote] = useState("");
 
   const totalItems = cart.reduce(
     (sum, food) => sum + food.quantity,
@@ -70,8 +71,9 @@ function Cart() {
             Authorization: `Bearer ${token}`
           },
           body: JSON.stringify({
-            items: orderItems
-          })
+  items: orderItems,
+  kitchen_note: kitchenNote.trim()
+})
         }
       );
 
@@ -315,10 +317,23 @@ function Cart() {
 
             <div className="summary-divider" />
 
-            <div className="summary-row summary-total">
-              <span>Total</span>
-              <strong>₹{total.toFixed(0)}</strong>
-            </div>
+            <div className="kitchen-instructions">
+  <label htmlFor="kitchen-note">
+    Special Instructions <span>(Optional)</span>
+  </label>
+
+  <textarea
+    id="kitchen-note"
+    placeholder="e.g. Less spicy, no onions, extra crispy..."
+    value={kitchenNote}
+    onChange={(e) => setKitchenNote(e.target.value)}
+    maxLength={300}
+    rows={3}
+    disabled={placingOrder}
+  />
+
+  <small>{kitchenNote.length}/300 characters</small>
+</div>
 
             <button
               className="place-order-button"

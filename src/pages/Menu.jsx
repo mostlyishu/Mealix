@@ -739,6 +739,7 @@ async function findBreakMeals() {
                               name={food.name}
                               price={food.price}
                               category={food.category}
+                              description={food.description}
                               available={Number(food.available) === 1}
                               imageUrl={food.image_url}
                               quantity={cartItem?.quantity || 0}

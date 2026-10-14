@@ -1656,3 +1656,46 @@
     transition: none;
   }
 }
+/* GROUPBITE KITCHEN INSTRUCTIONS */
+
+.gb-kitchen-note {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.gb-kitchen-note label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.gb-kitchen-note label span {
+  font-weight: 400;
+  color: #78716c;
+}
+
+.gb-kitchen-note textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+}
+
+.gb-kitchen-note textarea:focus {
+  border-color: var(--primary);
+}
+
+.gb-kitchen-note small {
+  align-self: flex-end;
+  color: #78716c;
+  font-size: 11px;
+}

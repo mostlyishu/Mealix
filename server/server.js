@@ -606,7 +606,27 @@ app.get("/api/profile", authMiddleware, (req, res) => {
 
 
 app.post("/api/orders", authMiddleware, async (req, res) => {
-  const { items } = req.body;
+  const { items, kitchen_note } = req.body;
+
+if (
+  kitchen_note != null &&
+  typeof kitchen_note !== "string"
+) {
+  return res.status(400).json({
+    message: "Invalid kitchen instructions"
+  });
+}
+
+const cleanKitchenNote =
+  typeof kitchen_note === "string"
+    ? kitchen_note.trim()
+    : "";
+
+if (cleanKitchenNote.length > 300) {
+  return res.status(400).json({
+    message: "Kitchen instructions must be 300 characters or less"
+  });
+}
 
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({
@@ -713,10 +733,14 @@ app.post("/api/orders", authMiddleware, async (req, res) => {
     );
 
     const [orderResult] = await connection.query(
-      `INSERT INTO orders (user_id, total_amount)
-       VALUES (?, ?)`,
-      [req.user.id, calculatedTotal]
-    );
+  `INSERT INTO orders (user_id, total_amount, kitchen_note)
+   VALUES (?, ?, ?)`,
+  [
+    req.user.id,
+    calculatedTotal,
+    cleanKitchenNote || null
+  ]
+);
 
     const orderId = orderResult.insertId;
 
@@ -924,8 +948,9 @@ app.get(
         users.name AS customer_name,
         users.email AS customer_email,
         orders.total_amount,
-        orders.status,
-        orders.created_at,
+    orders.status,
+    orders.kitchen_note,
+    orders.created_at,
         foods.name AS food_name,
 order_items.unit_price AS price,
 order_items.quantity
@@ -1240,7 +1265,8 @@ app.post(
       category,
       available,
       image_url,
-      meal_type
+      meal_type,
+      description
     } = req.body;
 
     const cleanName =
@@ -1284,17 +1310,30 @@ if (!allowedMealTypes.includes(meal_type)) {
     message: "Please select a valid meal type"
   });
 }
+const cleanDescription =
+  typeof description === "string"
+    ? description.trim()
+    : "";
+
+if (cleanDescription.length > 500) {
+  return res.status(400).json({
+    message: "Description must be 500 characters or less"
+  });
+}
     const sql = `
   INSERT INTO foods
+  (
+INSERT INTO foods
   (
     name,
     price,
     category,
     available,
     image_url,
-    meal_type
+    meal_type,
+    description
   )
-  VALUES (?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?)
 `;
 
 db.query(
@@ -1305,7 +1344,8 @@ db.query(
     cleanCategory,
     available ?? true,
     image_url || null,
-    meal_type
+    meal_type,
+    cleanDescription
   ],
   (err, result) => {
     if (err) {
@@ -1344,7 +1384,8 @@ app.put(
           category,
           available,
           image_url,
-          meal_type
+          meal_type,
+          description
       } = req.body;
 
     const cleanName =
@@ -1388,7 +1429,16 @@ if (!allowedMealTypes.includes(meal_type)) {
     message: "Please select a valid meal type"
   });
 }
+const cleanDescription =
+  typeof description === "string"
+    ? description.trim()
+    : "";
 
+if (cleanDescription.length > 500) {
+  return res.status(400).json({
+    message: "Description must be 500 characters or less"
+  });
+}
       const sql = `
   UPDATE foods
   SET
@@ -1397,7 +1447,8 @@ if (!allowedMealTypes.includes(meal_type)) {
     category = ?,
     available = ?,
     image_url = ?,
-    meal_type = ?
+    meal_type = ?,
+    description = ?
 
   WHERE id = ?
 `;
@@ -1411,6 +1462,7 @@ if (!allowedMealTypes.includes(meal_type)) {
             available,
             image_url || null,
             meal_type,
+            cleanDescription,
             foodId
         ],
       (err, result) => {
@@ -2100,8 +2152,25 @@ app.delete("/api/groups/:groupId/items/:itemId", authMiddleware, async (req, res
 
 
 app.post("/api/groups/:groupId/checkout", authMiddleware, async (req, res) => {
+
   const groupId = Number(req.params.groupId);
   const userId = Number(req.user.id);
+  const { kitchen_note } = req.body;
+
+if (kitchen_note != null && typeof kitchen_note !== "string") {
+  return res.status(400).json({
+    message: "Invalid kitchen instructions"
+  });
+}
+
+const cleanKitchenNote =
+  typeof kitchen_note === "string" ? kitchen_note.trim() : "";
+
+if (cleanKitchenNote.length > 300) {
+  return res.status(400).json({
+    message: "Kitchen instructions must be 300 characters or less"
+  });
+}
 
   if (!Number.isSafeInteger(groupId) || groupId <= 0) {
     return res.status(400).json({
@@ -2236,11 +2305,11 @@ app.post("/api/groups/:groupId/checkout", authMiddleware, async (req, res) => {
     );
 
     // Create one order owned by the group host.
-    const [orderResult] = await connection.query(
-      `INSERT INTO orders (user_id, total_amount)
-       VALUES (?, ?)`,
-      [userId, totalAmount]
-    );
+   const [orderResult] = await connection.query(
+  `INSERT INTO orders (user_id, total_amount, kitchen_note)
+   VALUES (?, ?, ?)`,
+  [userId, totalAmount, cleanKitchenNote || null]
+);
 
     const orderId = orderResult.insertId;
 
