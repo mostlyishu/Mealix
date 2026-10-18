@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import FoodCard from "../components/FoodCard";
 import { useCart } from "../context/CartContext";
@@ -33,6 +33,7 @@ function Menu() {
         useState(false);
     const [mealPreference, setMealPreference] =
         useState("popular");
+        const recommendationResultsRef = useRef(null);
         // BREAKSYNC STATE
 const [breakMinutes, setBreakMinutes] = useState(10);
 const [breakResults, setBreakResults] = useState([]);
@@ -82,6 +83,7 @@ const [breakSearchMinutes, setBreakSearchMinutes] = useState(null);
   try {
     setRecommendationLoading(true);
     setRecommendationError("");
+    setRecommendations([]);
     setShowRecommendations(true);
 
       const response = await fetch(
@@ -97,7 +99,11 @@ const [breakSearchMinutes, setBreakSearchMinutes] = useState(null);
       );
     }
 
-    setRecommendations(data.recommendations);
+setRecommendations(
+  Array.isArray(data.recommendations)
+    ? data.recommendations
+    : []
+);
   } catch (error) {
     setRecommendations([]);
     setRecommendationError(error.message);
@@ -173,138 +179,7 @@ async function findBreakMeals() {
     Find your meal and skip the queue.
   </p>
 </section>
-{showRecommendations && (
-  <section className="meal-recommendation-results">
 
-    {recommendationError && (
-      <div className="meal-recommendation-empty">
-        <span>🍽️</span>
-
-        <div>
-          <strong>No meal found</strong>
-          <p>{recommendationError}</p>
-        </div>
-      </div>
-    )}
-
-    {!recommendationLoading &&
-      !recommendationError &&
-      recommendations.length > 0 && (
-        <>
-          <div className="meal-recommendation-heading">
-            <div>
-              <span>MEALIX RECOMMENDS</span>
-
-                                  <h3>
-                                      {mealPreference === "popular"
-                                          ? "Popular campus picks"
-                                          : mealPreference === "quick"
-                                              ? "Quick bites"
-                                              : mealPreference === "filling"
-                                                  ? "Filling meal picks"
-                                                  : "Refreshing beverage picks"}
-                                      {" "}under ₹{recommendationBudget}
-                                  </h3>
-            </div>
-
-            <small>
-              Ranked using campus order popularity
-            </small>
-          </div>
-
-          <div className="meal-recommendation-grid">
-            {recommendations
-              .slice(0, 3)
-              .map((food, index) => {
-                const cartItem = cart.find(
-                  (item) => item.id === food.id
-                );
-
-                const quantity =
-                  cartItem?.quantity || 0;
-
-                return (
-                  <article
-                    className="meal-recommendation-card"
-                    key={food.id}
-                  >
-                    {index === 0 && (
-                      <span className="best-pick-badge">
-                        ★ BEST PICK
-                      </span>
-                    )}
-
-                    <div className="meal-recommendation-image">
-                      {food.image_url ? (
-                        <img
-                          src={food.image_url}
-                          alt={food.name}
-                        />
-                      ) : (
-                        <span>🍽️</span>
-                      )}
-                    </div>
-
-                    <div className="meal-recommendation-info">
-                      <span>{food.category}</span>
-
-                      <h3>{food.name}</h3>
-
-                      <div className="meal-recommendation-meta">
-                        <strong>
-                          ₹{Number(food.price).toFixed(0)}
-                        </strong>
-
-                        <span>
-                          🔥 {Number(food.popularity)} ordered
-                        </span>
-                      </div>
-                            <div className="meal-recommendation-reason">
-                                <span>✓</span>
-                                {getRecommendationReason(food)}
-                            </div>
-
-                      {quantity > 0 ? (
-                        <div className="recommendation-quantity-control">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              decreaseQuantity(food.id)
-                            }
-                          >
-                            −
-                          </button>
-
-                          <span>{quantity}</span>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              increaseQuantity(food.id)
-                            }
-                          >
-                            +
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            addToCart(food)
-                          }
-                        >
-                          + Add to Cart
-                        </button>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-          </div>
-        </>
-      )}
-  </section>
-)}
 
 {/* BREAKSYNC */}
 <section className="breaksync">
@@ -589,6 +464,159 @@ async function findBreakMeals() {
     </button>
   </div>
 </section>
+{showRecommendations && (
+  <section
+    ref={recommendationResultsRef}
+    className="meal-recommendation-results"
+  >
+        {recommendationLoading && (
+      <p className="meal-recommendation-loading">
+        Finding the best meals for your budget...
+      </p>
+    )}
+
+    {recommendationError && (
+      <div className="meal-recommendation-empty">
+        <span>🍽️</span>
+
+        <div>
+          <strong>No meal found</strong>
+          <p>{recommendationError}</p>
+        </div>
+      </div>
+    )}
+    {!recommendationLoading &&
+  !recommendationError &&
+  recommendations.length === 0 && (
+    <div className="meal-recommendation-empty">
+      <span>🍽️</span>
+      <div>
+        <strong>No matching meals found</strong>
+        <p>
+          Try increasing your budget or choosing another preference.
+        </p>
+      </div>
+    </div>
+)}
+
+    {!recommendationLoading &&
+      !recommendationError &&
+      recommendations.length > 0 && (
+        <>
+          <div className="meal-recommendation-heading">
+            <div>
+              <span>MEALIX RECOMMENDS</span>
+
+                                  <h3>
+                                      {mealPreference === "popular"
+                                          ? "Popular campus picks"
+                                          : mealPreference === "quick"
+                                              ? "Quick bites"
+                                              : mealPreference === "filling"
+                                                  ? "Filling meal picks"
+                                                  : "Refreshing beverage picks"}
+                                      {" "}under ₹{recommendationBudget}
+                                  </h3>
+            </div>
+
+            <small>
+              Ranked using campus order popularity
+            </small>
+          </div>
+
+          <div className="meal-recommendation-grid">
+            {recommendations
+              .slice(0, 3)
+              .map((food, index) => {
+                const cartItem = cart.find(
+                  (item) => item.id === food.id
+                );
+
+                const quantity =
+                  cartItem?.quantity || 0;
+
+                return (
+                  <article
+                    className="meal-recommendation-card"
+                    key={food.id}
+                  >
+                    {index === 0 && (
+                      <span className="best-pick-badge">
+                        ★ BEST PICK
+                      </span>
+                    )}
+
+                    <div className="meal-recommendation-image">
+                      {food.image_url ? (
+                        <img
+                          src={food.image_url}
+                          alt={food.name}
+                        />
+                      ) : (
+                        <span>🍽️</span>
+                      )}
+                    </div>
+
+                    <div className="meal-recommendation-info">
+                      <span>{food.category}</span>
+
+                      <h3>{food.name}</h3>
+
+                      <div className="meal-recommendation-meta">
+                        <strong>
+                          ₹{Number(food.price).toFixed(0)}
+                        </strong>
+
+                        <span>
+                          🔥 {Number(food.popularity)} ordered
+                        </span>
+                      </div>
+                            <div className="meal-recommendation-reason">
+                                <span>✓</span>
+                                {getRecommendationReason(food)}
+                            </div>
+
+                      {quantity > 0 ? (
+                        <div className="recommendation-quantity-control">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              decreaseQuantity(food.id)
+                            }
+                          >
+                            −
+                          </button>
+
+                          <span>{quantity}</span>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              increaseQuantity(food.id)
+                            }
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            addToCart(food)
+                          }
+                        >
+                          + Add to Cart
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+          </div>
+        </>
+      )}
+  </section>
+)}
 
       {/* SEARCH + FILTER */}
 
