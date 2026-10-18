@@ -392,9 +392,10 @@ function GroupBite() {
           MEALIX SOCIAL DINING
         </div>
 
-        <h1>
-          Good food. <em>Better together.</em>
-        </h1>
+              <h1>
+                  <span>Why eat alone?</span>
+                  <em>Bring your crew.</em>
+              </h1>
 
         <p>
           One shared cart, one pickup token, and zero

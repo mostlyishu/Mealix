@@ -18,10 +18,24 @@
   letter-spacing: 1px;
 }
 
+/* BREAKSYNC — PREMIUM EDITORIAL HEADING */
+
 .breaksync-header h2 {
-  margin: 10px 0;
-  font-size: clamp(23px, 3vw, 30px);
-  color: var(--text-primary);
+  font-family: "DM Serif Display", Georgia, serif;
+  font-size: clamp(30px, 3vw, 42px);
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: -0.4px;
+  line-height: 1.15;
+}
+/* BREAKSYNC — RESULTS HEADING */
+
+.breaksync-results-heading h3 {
+  font-family: "DM Serif Display", Georgia, serif;
+  font-size: clamp(24px, 2.5vw, 32px);
+  font-weight: 400;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
 }
 
 .breaksync-header p {

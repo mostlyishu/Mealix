@@ -55,20 +55,20 @@ function getFoodEmoji(name) {
 
       <section className="home-hero">
         <div className="home-hero-content">
-          <span className="home-eyebrow">
-            GOOD FOOD, BRIGHTER DAYS.
-          </span>
+                  <span className="home-eyebrow">
+                      A BETTER WAY TO EAT ON CAMPUS
+                  </span>
 
-          <h1>
-            Fresh Meals
-            <span>Made for Campus Life.</span>
-          </h1>
+                  <h1>
+                      Good food.
+                      <span>Better breaks.</span>
+                  </h1>
 
-          <p className="home-hero-description">
-            Delicious, affordable and convenient food,
-            right here on campus. Order ahead, skip the
-            queue and enjoy your meal.
-          </p>
+                  <p className="home-hero-description">
+                      Your campus favourites, freshly prepared and
+                      just a few taps away. Skip the queue, savour
+                      the moment.
+                  </p>
 
           <div className="home-hero-actions">
             <Link

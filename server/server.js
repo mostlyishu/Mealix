@@ -2417,6 +2417,6 @@ app.get("/api/pickup-board", (req, res) => {
 
 app.listen(5001, () => {
   console.log(
-    "Mealix server running on http://localhost:5001"
+    "Mealix Backend server running on http://localhost:5001"
   );
 });

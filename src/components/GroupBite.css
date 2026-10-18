@@ -54,8 +54,11 @@
 }
 
 .gb-heading h1 em {
-  font-style: normal;
-  color: var(--gb-orange);
+  font-family: inherit;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--sienna, #a0522d);
+  letter-spacing: -0.3px;
 }
 
 .gb-heading > p {
@@ -1698,4 +1701,99 @@
   align-self: flex-end;
   color: #78716c;
   font-size: 11px;
+}
+/* =====================================
+   GROUPBITE — MEALIX EDITORIAL TYPE
+   ===================================== */
+
+/* Main hero heading */
+.gb-heading h1 {
+  font-family: var(--font-heading, "DM Serif Display", Georgia, serif);
+  font-size: clamp(38px, 5vw, 64px);
+  font-weight: 400;
+  letter-spacing: -0.5px;
+  line-height: 1.14;
+}
+
+/* Orange italic emphasis */
+.gb-heading h1 em {
+  font-family: inherit;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--sienna, #a0522d);
+  letter-spacing: -0.3px;
+}
+
+/* Create / Join group headings */
+.gb-option-card h2 {
+  font-family: var(--font-heading, "DM Serif Display", Georgia, serif);
+  font-size: clamp(27px, 3vw, 34px);
+  font-weight: 400;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+/* Active group welcome heading */
+.gb-session-details h2 {
+  font-family: var(--font-heading, "DM Serif Display", Georgia, serif);
+  font-weight: 400;
+  letter-spacing: -0.4px;
+  line-height: 1.15;
+}
+
+/* Group workspace headings */
+.gb-panel-heading h2,
+.gb-summary-card h2 {
+  font-family: var(--font-heading, "DM Serif Display", Georgia, serif);
+  font-weight: 400;
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+}
+
+/* Empty cart and order confirmation */
+.gb-empty h3,
+.gb-order-success h2,
+.gb-placed-notice h3 {
+  font-family: var(--font-heading, "DM Serif Display", Georgia, serif);
+  font-weight: 400;
+  letter-spacing: -0.2px;
+}
+
+/* Keep operational text clean */
+.gb-page button,
+.gb-page input,
+.gb-page textarea,
+.gb-page label,
+.gb-code,
+.gb-pickup-token,
+.gb-item-info h3 {
+  font-family: var(--font-body, "Inter", sans-serif);
+}
+/* GroupBite — Two-line editorial heading */
+
+.gb-heading h1 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.gb-heading h1 span,
+.gb-heading h1 em {
+  display: block;
+  white-space: normal;
+}
+
+.gb-heading h1 em {
+  color: var(--sienna, #a0522d);
+  font-style: italic;
+  font-weight: 400;
+}
+
+@media (max-width: 700px) {
+  .gb-heading h1 {
+    font-size: clamp(34px, 8vw, 48px);
+    gap: 6px;
+  }
 }
