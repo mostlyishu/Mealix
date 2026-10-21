@@ -22,6 +22,8 @@ function Cart() {
   const [rewardPoints, setRewardPoints] = useState(0);
 const [pointsBalance, setPointsBalance] = useState(0);
 const [rewardsLoading, setRewardsLoading] = useState(false);
+const [rewardsOpen, setRewardsOpen] = useState(false);
+const [pendingReward, setPendingReward] = useState(0);
 
   const totalItems = cart.reduce(
     (sum, food) => sum + food.quantity,
@@ -402,80 +404,129 @@ const appliedRewardPoints = rewardIsValid ? rewardPoints : 0;
             <div className="summary-divider" />
 
 
-<div className="cart-rewards">
-  <div className="cart-rewards-heading">
-    <h3>✦ Mealix Rewards</h3>
-    <span>
-      {rewardsLoading
-        ? "Loading..."
-        : `${pointsBalance} points available`}
+
+<div className="cart-rewards compact-rewards">
+  <button
+    type="button"
+    className="rewards-toggle"
+    onClick={() => {
+      setRewardsOpen((open) => !open);
+      setPendingReward(appliedRewardPoints);
+    }}
+    aria-expanded={rewardsOpen}
+    disabled={placingOrder}
+  >
+    <span className="rewards-toggle-left">
+      <span className="rewards-gift">✦</span>
+      <span className="rewards-toggle-info">
+        <strong>Mealix Rewards</strong>
+        <small>
+          {rewardsLoading
+            ? "Loading points..."
+            : `${pointsBalance} points available`}
+        </small>
+      </span>
     </span>
-  </div>
 
-  {!isLoggedIn ? (
-    <p>Log in to redeem your rewards.</p>
-  ) : (
-    <>
-      <p className="cart-rewards-description">
-        Use your points to save on this order.
-      </p>
+    <span className="rewards-toggle-right">
+      {appliedRewardPoints > 0 && (
+        <span className="rewards-applied-tag">
+          ₹{discount} saved
+        </span>
+      )}
+      <span className="rewards-chevron">
+        {rewardsOpen ? "⌃" : "⌄"}
+      </span>
+    </span>
+  </button>
 
-      <div className="cart-rewards-options">
-        <label className="cart-reward-option">
-          <input
-            type="radio"
-            name="mealix-reward"
-            checked={appliedRewardPoints === 0}
-            onChange={() => setRewardPoints(0)}
-            disabled={placingOrder}
-          />
-          <span>No reward</span>
-        </label>
+  {rewardsOpen && (
+    <div className="rewards-dropdown">
+      {!isLoggedIn ? (
+        <p>Log in to use your rewards.</p>
+      ) : (
+        <>
+          <p className="rewards-dropdown-intro">
+            Choose a reward for this order.
+          </p>
 
-        {rewardOptions.map((option) => {
-          const eligible = canUseReward(
-            option.points,
-            option.discount
-          );
-
-          return (
-            <label
-              className={`cart-reward-option ${
-                !eligible ? "cart-reward-disabled" : ""
-              }`}
-              key={option.points}
-            >
+          <div className="rewards-select-options">
+            <label className="rewards-select-item">
               <input
                 type="radio"
-                name="mealix-reward"
-                checked={
-                  appliedRewardPoints === option.points
-                }
-                onChange={() =>
-                  setRewardPoints(option.points)
-                }
-                disabled={!eligible || placingOrder}
+                name="pending-mealix-reward"
+                checked={pendingReward === 0}
+                onChange={() => setPendingReward(0)}
+                disabled={placingOrder}
               />
-
-              <span>
-                {option.points} points
-              </span>
-
-              <strong>
-                ₹{option.discount} OFF
-              </strong>
+              <span>No reward</span>
             </label>
-          );
-        })}
-      </div>
 
-      <small className="cart-rewards-note">
-        Minimum order ₹100 · Maximum 25% discount ·
-        One reward per order
-      </small>
-    </>
+            {rewardOptions.map((option) => {
+              const eligible = canUseReward(
+                option.points,
+                option.discount
+              );
+
+              return (
+                <label
+                  key={option.points}
+                  className={`rewards-select-item ${
+                    !eligible ? "reward-unavailable" : ""
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="pending-mealix-reward"
+                    checked={pendingReward === option.points}
+                    onChange={() =>
+                      setPendingReward(option.points)
+                    }
+                    disabled={!eligible || placingOrder}
+                  />
+
+                  <span>{option.points} points</span>
+                  <strong>₹{option.discount} OFF</strong>
+                </label>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            className="apply-rewards-button"
+            disabled={
+              placingOrder ||
+              (pendingReward !== 0 &&
+                !rewardOptions.some(
+                  (option) =>
+                    option.points === pendingReward &&
+                    canUseReward(
+                      option.points,
+                      option.discount
+                    )
+                ))
+            }
+            onClick={() => {
+              setRewardPoints(pendingReward);
+              setRewardsOpen(false);
+            }}
+          >
+            {pendingReward === 0
+              ? "Apply Selection"
+              : "Use Reward Points →"}
+          </button>
+
+          <small className="rewards-rules">
+            Min. order ₹100 · Max. 25% discount ·
+            One reward per order
+          </small>
+        </>
+      )}
+    </div>
   )}
 </div>
+
 
 <div className="summary-divider" />
 

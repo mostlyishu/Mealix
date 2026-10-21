@@ -10796,3 +10796,182 @@ font-weight: 600;
 .cart-discount-amount {
   color: #34855c;
 }
+
+/* COMPACT MEALIX REWARDS */
+
+.compact-rewards {
+  padding: 0;
+  margin: 8px 0 18px;
+  border: 1px solid #e9e0d7;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.rewards-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 17px;
+  border: none;
+  background: transparent;
+  color: #29231f;
+  cursor: pointer;
+  text-align: left;
+}
+
+.rewards-toggle-left,
+.rewards-toggle-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rewards-gift {
+  display: grid;
+  place-items: center;
+  width: 39px;
+  height: 39px;
+  border-radius: 11px;
+  background: #fbede5;
+  color: #dc5a3b;
+  font-size: 22px;
+}
+
+.rewards-toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rewards-toggle-info strong {
+  font-size: 15px;
+}
+
+.rewards-toggle-info small {
+  font-size: 12px;
+  color: #91877e;
+}
+
+.rewards-chevron {
+  font-size: 24px;
+  color: #8c8075;
+}
+
+.rewards-applied-tag {
+  padding: 6px 9px;
+  border-radius: 7px;
+  background: #eaf6ec;
+  color: #398457;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.rewards-dropdown {
+  padding: 16px;
+  border-top: 1px solid #f0e9e3;
+}
+
+.rewards-dropdown-intro {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: #847970;
+}
+
+.rewards-select-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rewards-select-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e9e0d7;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.rewards-select-item input {
+  accent-color: #d95137;
+}
+
+.rewards-select-item strong {
+  margin-left: auto;
+  color: #37875d;
+  font-size: 12px;
+}
+
+.reward-unavailable {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.apply-rewards-button {
+  width: 100%;
+  margin-top: 14px;
+  padding: 13px;
+  border: none;
+  border-radius: 9px;
+  background: #e65339;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.apply-rewards-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rewards-rules {
+  display: block;
+  margin-top: 12px;
+  color: #92887f;
+  font-size: 11px;
+  line-height: 1.6;
+}
+ .nav-links .nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.nav-links .nav-link svg {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.nav-links .nav-link:hover svg {
+  transform: translateY(-2px);
+}
+/* Mobile navbar icon alignment */
+
+.mobile-bottom-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-bottom-icon svg {
+  flex-shrink: 0;
+}
+
+.mobile-more-panel a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-more-panel a svg {
+  flex-shrink: 0;
+}

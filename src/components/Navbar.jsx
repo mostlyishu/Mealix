@@ -4,6 +4,20 @@ import {
   NavLink,
   useLocation,
 } from "react-router-dom";
+import {
+  House,
+  Utensils,
+  UsersRound,
+  Gift,
+  ReceiptText,
+  ShoppingCart,
+  ClipboardList,
+  ChefHat,
+  ChartNoAxesColumn,
+  Menu as MenuIcon,
+  LogIn,
+  UserPlus
+} from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
@@ -27,23 +41,41 @@ function Navbar() {
     logout();
   }
 
-  const mobileItems = isAdmin
-    ? [
-        { to: "/", label: "Home", icon: "⌂" },
-        { to: "/admin/orders", label: "Orders", icon: "☷" },
-        { to: "/admin/foods", label: "Foods", icon: "▦" },
-        { to: "/admin/analytics", label: "Analytics", icon: "▥" },
-      ]
-    : [
-        { to: "/", label: "Home", icon: "⌂" },
-        { to: "/menu", label: "Menu", icon: "☷" },
-        ...(isStudent
-          ? [{ to: "/groupbite", label: "GroupBite", icon: "♧" }]
-          : []),
-        ...(isLoggedIn
-          ? [{ to: "/orders", label: "Orders", icon: "▤" }]
-          : []),
-      ];
+
+const mobileItems = isAdmin
+  ? [
+      { to: "/", label: "Home", icon: House },
+      { to: "/admin/orders", label: "Orders", icon: ClipboardList },
+      { to: "/admin/foods", label: "Foods", icon: ChefHat },
+      {
+        to: "/admin/analytics",
+        label: "Analytics",
+        icon: ChartNoAxesColumn
+      },
+    ]
+  : [
+      { to: "/", label: "Home", icon: House },
+      { to: "/menu", label: "Menu", icon: Utensils },
+      ...(isStudent
+        ? [
+            {
+              to: "/groupbite",
+              label: "GroupBite",
+              icon: UsersRound
+            }
+          ]
+        : []),
+      ...(isLoggedIn
+        ? [
+            {
+              to: "/orders",
+              label: "Orders",
+              icon: ReceiptText
+            }
+          ]
+        : []),
+    ];
+
 
   return (
     <>
@@ -61,68 +93,69 @@ function Navbar() {
           />
         </Link>
 
-        <div className="nav-links">
-          <NavLink to="/" end className={getNavClass}>
-            Home
-          </NavLink>
+       
+<div className="nav-links">
+  <NavLink to="/" end className={getNavClass}>
+    <House size={17} strokeWidth={1.8} />
+    Home
+  </NavLink>
 
-          <NavLink to="/menu" className={getNavClass}>
-            Menu
-          </NavLink>
+  <NavLink to="/menu" className={getNavClass}>
+    <Utensils size={17} strokeWidth={1.8} />
+    Menu
+  </NavLink>
 
-          {isStudent && (
-            <NavLink to="/groupbite" className={getNavClass}>
-              GroupBite
-            </NavLink>
-          )}
+  {isStudent && (
+    <>
+      <NavLink to="/groupbite" className={getNavClass}>
+        <UsersRound size={17} strokeWidth={1.8} />
+        GroupBite
+      </NavLink>
 
-          {/* MEALIX REWARDS - DESKTOP */}
-          {isStudent && (
-            <NavLink to="/rewards" className={getNavClass}>
-              ✦ Rewards
-            </NavLink>
-          )}
+      <NavLink to="/rewards" className={getNavClass}>
+        <Gift size={17} strokeWidth={1.8} />
+        Rewards
+      </NavLink>
+    </>
+  )}
 
-          {isLoggedIn && (
-            <NavLink to="/orders" className={getNavClass}>
-              My Orders
-            </NavLink>
-          )}
+  {isLoggedIn && (
+    <NavLink to="/orders" className={getNavClass}>
+      <ReceiptText size={17} strokeWidth={1.8} />
+      My Orders
+    </NavLink>
+  )}
 
-          <NavLink to="/cart" className={getNavClass}>
-            Cart
-            {totalCartItems > 0 && (
-              <span className="nav-cart-badge">
-                {totalCartItems}
-              </span>
-            )}
-          </NavLink>
+  <NavLink to="/cart" className={getNavClass}>
+    <ShoppingCart size={17} strokeWidth={1.8} />
+    Cart
+    {totalCartItems > 0 && (
+      <span className="nav-cart-badge">
+        {totalCartItems}
+      </span>
+    )}
+  </NavLink>
 
-          {isAdmin && (
-            <>
-              <NavLink
-                to="/admin/orders"
-                className={getNavClass}
-              >
-                Admin Orders
-              </NavLink>
+  {isAdmin && (
+    <>
+      <NavLink to="/admin/orders" className={getNavClass}>
+        <ClipboardList size={17} strokeWidth={1.8} />
+        Admin Orders
+      </NavLink>
 
-              <NavLink
-                to="/admin/foods"
-                className={getNavClass}
-              >
-                Manage Foods
-              </NavLink>
+      <NavLink to="/admin/foods" className={getNavClass}>
+        <ChefHat size={17} strokeWidth={1.8} />
+        Manage Foods
+      </NavLink>
 
-              <NavLink
-                to="/admin/analytics"
-                className={getNavClass}
-              >
-                Analytics
-              </NavLink>
-            </>
-          )}
-        </div>
+      <NavLink to="/admin/analytics" className={getNavClass}>
+        <ChartNoAxesColumn size={17} strokeWidth={1.8} />
+        Analytics
+      </NavLink>
+    </>
+  )}
+</div>
+
 
         <div className="navbar-actions">
           {isLoggedIn ? (
@@ -209,10 +242,12 @@ function Navbar() {
         )}
 
         <Link to="/" onClick={() => setMoreOpen(false)}>
+        <House size={17} />
           Home
         </Link>
 
         <Link to="/menu" onClick={() => setMoreOpen(false)}>
+        <Utensils size={17} strokeWidth={1.8} />
           Menu
         </Link>
 
@@ -221,6 +256,7 @@ function Navbar() {
             to="/groupbite"
             onClick={() => setMoreOpen(false)}
           >
+            <UsersRound size={17} />
             GroupBite
           </Link>
         )}
@@ -231,7 +267,8 @@ function Navbar() {
             to="/rewards"
             onClick={() => setMoreOpen(false)}
           >
-            ✦ My Rewards
+            <Gift size={17} />
+             My Rewards
           </Link>
         )}
 
@@ -240,11 +277,13 @@ function Navbar() {
             to="/orders"
             onClick={() => setMoreOpen(false)}
           >
+            <ReceiptText size={17} />
             My Orders
           </Link>
         )}
 
         <Link to="/cart" onClick={() => setMoreOpen(false)}>
+        <ShoppingCart size={17} />
           Cart {totalCartItems > 0 ? `(${totalCartItems})` : ""}
         </Link>
 
@@ -254,18 +293,21 @@ function Navbar() {
               to="/admin/orders"
               onClick={() => setMoreOpen(false)}
             >
+              <ClipboardList size={17} />
               Admin Orders
             </Link>
             <Link
               to="/admin/foods"
               onClick={() => setMoreOpen(false)}
             >
+              <ChefHat size={17} />
               Manage Foods
             </Link>
             <Link
               to="/admin/analytics"
               onClick={() => setMoreOpen(false)}
             >
+              <ChartNoAxesColumn size={17} />
               Analytics
             </Link>
           </>
@@ -278,9 +320,11 @@ function Navbar() {
         ) : (
           <>
             <Link to="/login" onClick={() => setMoreOpen(false)}>
+            <LogIn size={17} />
               Login
             </Link>
             <Link to="/register" onClick={() => setMoreOpen(false)}>
+            <UserPlus size={17} />
               Register
             </Link>
           </>
@@ -299,8 +343,8 @@ function Navbar() {
             }
           >
             <span className="mobile-bottom-icon" aria-hidden="true">
-              {item.icon}
-            </span>
+  <item.icon size={20} strokeWidth={1.8} />
+</span>
             <span>{item.label}</span>
           </NavLink>
         ))}
@@ -319,9 +363,9 @@ function Navbar() {
           aria-expanded={moreOpen}
           aria-controls="mealix-mobile-more"
         >
-          <span className="mobile-bottom-icon" aria-hidden="true">
-            ☰
-          </span>
+         <span className="mobile-bottom-icon" aria-hidden="true">
+  <MenuIcon size={20} strokeWidth={1.8} />
+</span>
           <span>More</span>
         </button>
       </nav>

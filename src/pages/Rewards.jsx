@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "./Rewards.css";
+import API_URL from "../config/api";
 
 function Rewards() {
   const [wallet, setWallet] = useState({
@@ -20,8 +21,8 @@ function Rewards() {
       try {
         const token = localStorage.getItem("token");
 
-        const response = await fetch(
-          "http://localhost:5001/api/rewards",
+          const response = await fetch(
+              `${API_URL}/api/rewards`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
