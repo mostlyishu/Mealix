@@ -16,6 +16,7 @@ import AdminFoods from "./pages/AdminFoods";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import GroupBite from "./components/GroupBite";
 import PickupBoard from "./pages/PickupBoard";
+import Rewards from "./pages/Rewards";
 
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -35,6 +36,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Orders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/rewards"
+              element={
+                <ProtectedRoute>
+                  <Rewards />
                 </ProtectedRoute>
               }
             />

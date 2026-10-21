@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +19,9 @@ function Cart() {
   const [message, setMessage] = useState("");
   const [placingOrder, setPlacingOrder] = useState(false);
   const [kitchenNote, setKitchenNote] = useState("");
+  const [rewardPoints, setRewardPoints] = useState(0);
+const [pointsBalance, setPointsBalance] = useState(0);
+const [rewardsLoading, setRewardsLoading] = useState(false);
 
   const totalItems = cart.reduce(
     (sum, food) => sum + food.quantity,
@@ -30,6 +33,83 @@ function Cart() {
       sum + Number(food.price) * food.quantity,
     0
   );
+   
+  useEffect(() => {
+  if (!isLoggedIn) {
+    setPointsBalance(0);
+    setRewardPoints(0);
+    return;
+  }
+
+  let active = true;
+
+  async function fetchRewards() {
+    setRewardsLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(`${API_URL}/api/rewards`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Unable to load rewards");
+      }
+
+      const data = await response.json();
+
+      if (active) {
+        setPointsBalance(Number(data.wallet.points_balance));
+      }
+    } catch (error) {
+      if (active) {
+        setPointsBalance(0);
+        setRewardPoints(0);
+      }
+    } finally {
+      if (active) setRewardsLoading(false);
+    }
+  }
+
+  fetchRewards();
+
+  return () => {
+    active = false;
+  };
+}, [isLoggedIn]);
+
+const rewardOptions = [
+  { points: 50, discount: 10 },
+  { points: 100, discount: 25 }
+];
+
+function canUseReward(points, discount) {
+  return (
+    isLoggedIn &&
+    !rewardsLoading &&
+    pointsBalance >= points &&
+    total >= 100 &&
+    discount <= total * 0.25
+  );
+}
+
+const selectedReward = rewardOptions.find(
+  (option) => option.points === rewardPoints
+);
+
+const rewardIsValid =
+  selectedReward &&
+  canUseReward(
+    selectedReward.points,
+    selectedReward.discount
+  );
+
+const discount = rewardIsValid ? selectedReward.discount : 0;
+const payableTotal = total - discount;
+const appliedRewardPoints = rewardIsValid ? rewardPoints : 0;
 
   async function handlePlaceOrder() {
     if (placingOrder) return;
@@ -44,8 +124,11 @@ function Cart() {
     }
 
     const confirmOrder = window.confirm(
-      `Place this order for ₹${total.toFixed(2)}?`
-    );
+  `Place this order for ₹${payableTotal.toFixed(2)}?` +
+  (appliedRewardPoints > 0
+    ? `\nReward: ${appliedRewardPoints} points redeemed`
+    : "")
+);
 
     if (!confirmOrder) {
       return;
@@ -71,9 +154,10 @@ function Cart() {
             Authorization: `Bearer ${token}`
           },
           body: JSON.stringify({
-  items: orderItems,
-  kitchen_note: kitchenNote.trim()
-})
+            items: orderItems,
+            kitchen_note: kitchenNote.trim(),
+            reward_points: appliedRewardPoints
+          })
         }
       );
 
@@ -316,6 +400,103 @@ function Cart() {
             </div>
 
             <div className="summary-divider" />
+
+
+<div className="cart-rewards">
+  <div className="cart-rewards-heading">
+    <h3>✦ Mealix Rewards</h3>
+    <span>
+      {rewardsLoading
+        ? "Loading..."
+        : `${pointsBalance} points available`}
+    </span>
+  </div>
+
+  {!isLoggedIn ? (
+    <p>Log in to redeem your rewards.</p>
+  ) : (
+    <>
+      <p className="cart-rewards-description">
+        Use your points to save on this order.
+      </p>
+
+      <div className="cart-rewards-options">
+        <label className="cart-reward-option">
+          <input
+            type="radio"
+            name="mealix-reward"
+            checked={appliedRewardPoints === 0}
+            onChange={() => setRewardPoints(0)}
+            disabled={placingOrder}
+          />
+          <span>No reward</span>
+        </label>
+
+        {rewardOptions.map((option) => {
+          const eligible = canUseReward(
+            option.points,
+            option.discount
+          );
+
+          return (
+            <label
+              className={`cart-reward-option ${
+                !eligible ? "cart-reward-disabled" : ""
+              }`}
+              key={option.points}
+            >
+              <input
+                type="radio"
+                name="mealix-reward"
+                checked={
+                  appliedRewardPoints === option.points
+                }
+                onChange={() =>
+                  setRewardPoints(option.points)
+                }
+                disabled={!eligible || placingOrder}
+              />
+
+              <span>
+                {option.points} points
+              </span>
+
+              <strong>
+                ₹{option.discount} OFF
+              </strong>
+            </label>
+          );
+        })}
+      </div>
+
+      <small className="cart-rewards-note">
+        Minimum order ₹100 · Maximum 25% discount ·
+        One reward per order
+      </small>
+    </>
+  )}
+</div>
+
+<div className="summary-divider" />
+
+<div className="cart-payment-breakdown">
+  {discount > 0 && (
+    <div className="summary-row">
+      <span>Rewards discount</span>
+      <strong className="cart-discount-amount">
+        −₹{discount.toFixed(2)}
+      </strong>
+    </div>
+  )}
+
+  <div className="summary-row">
+    <span>Amount to pay</span>
+    <strong>₹{payableTotal.toFixed(2)}</strong>
+  </div>
+</div>
+
+<div className="summary-divider" />
+
 
             <div className="kitchen-instructions">
   <label htmlFor="kitchen-note">

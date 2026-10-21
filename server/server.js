@@ -586,6 +586,50 @@ if (typeof password !== "string") {
 });
 
 
+ // =========================
+ // MEALIX REWARDS - STUDENT WALLET
+ // =========================
+
+app.get("/api/rewards", authMiddleware, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const [walletRows] = await transactionPool.query(
+      `SELECT points_balance, total_earned, total_redeemed
+       FROM reward_wallets
+       WHERE user_id = ?`,
+      [userId]
+    );
+
+    const [transactions] = await transactionPool.query(
+      `SELECT id, order_id, type, points, description, created_at
+       FROM reward_transactions
+       WHERE user_id = ?
+       ORDER BY created_at DESC, id DESC
+       LIMIT 50`,
+      [userId]
+    );
+
+    const wallet = walletRows[0] || {
+      points_balance: 0,
+      total_earned: 0,
+      total_redeemed: 0
+    };
+
+    return res.json({
+      wallet,
+      transactions
+    });
+
+  } catch (error) {
+    console.error("Rewards wallet error:", error);
+
+    return res.status(500).json({
+      message: "Failed to fetch rewards"
+    });
+  }
+});
+
 
 // =========================
 // PROFILE
@@ -605,28 +649,41 @@ app.get("/api/profile", authMiddleware, (req, res) => {
 // =========================
 
 
+
 app.post("/api/orders", authMiddleware, async (req, res) => {
-  const { items, kitchen_note } = req.body;
+  const { items, kitchen_note, reward_points = 0 } = req.body;
 
-if (
-  kitchen_note != null &&
-  typeof kitchen_note !== "string"
-) {
-  return res.status(400).json({
-    message: "Invalid kitchen instructions"
-  });
-}
+  const userId = Number(req.user.id);
+  const pointsRequested = Number(reward_points);
 
-const cleanKitchenNote =
-  typeof kitchen_note === "string"
-    ? kitchen_note.trim()
-    : "";
+  if (
+    !Number.isSafeInteger(pointsRequested) ||
+    ![0, 50, 100].includes(pointsRequested)
+  ) {
+    return res.status(400).json({
+      message: "Invalid reward selection"
+    });
+  }
 
-if (cleanKitchenNote.length > 300) {
-  return res.status(400).json({
-    message: "Kitchen instructions must be 300 characters or less"
-  });
-}
+  if (
+    kitchen_note != null &&
+    typeof kitchen_note !== "string"
+  ) {
+    return res.status(400).json({
+      message: "Invalid kitchen instructions"
+    });
+  }
+
+  const cleanKitchenNote =
+    typeof kitchen_note === "string"
+      ? kitchen_note.trim()
+      : "";
+
+  if (cleanKitchenNote.length > 300) {
+    return res.status(400).json({
+      message: "Kitchen instructions must be 300 characters or less"
+    });
+  }
 
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({
@@ -650,7 +707,6 @@ if (cleanKitchenNote.length > 300) {
     });
   }
 
-  // Merge duplicate food IDs
   const itemMap = new Map();
 
   for (const item of items) {
@@ -681,7 +737,6 @@ if (cleanKitchenNote.length > 300) {
 
   try {
     connection = await transactionPool.getConnection();
-
     await connection.beginTransaction();
 
     const foodIds = normalizedItems
@@ -690,7 +745,6 @@ if (cleanKitchenNote.length > 300) {
 
     const placeholders = foodIds.map(() => "?").join(",");
 
-    // Lock food rows until checkout finishes
     const [foods] = await connection.query(
       `SELECT id, name, price, available
        FROM foods
@@ -702,7 +756,6 @@ if (cleanKitchenNote.length > 300) {
 
     if (foods.length !== foodIds.length) {
       await connection.rollback();
-
       return res.status(400).json({
         message: "One or more food items do not exist"
       });
@@ -714,9 +767,10 @@ if (cleanKitchenNote.length > 300) {
 
     if (unavailableFoods.length > 0) {
       await connection.rollback();
-
       return res.status(409).json({
-        message: `${unavailableFoods.map((f) => f.name).join(", ")} is currently unavailable`
+        message: `${unavailableFoods
+          .map((food) => food.name)
+          .join(", ")} is currently unavailable`
       });
     }
 
@@ -724,26 +778,80 @@ if (cleanKitchenNote.length > 300) {
       foods.map((food) => [Number(food.id), food])
     );
 
-    // Never trust prices sent from the frontend
-    const calculatedTotal = normalizedItems.reduce(
-      (total, item) =>
-        total +
-        Number(foodMap.get(item.food_id).price) * item.quantity,
+    // Calculate prices from database, never from frontend.
+    // Integer paise avoid floating-point rounding errors.
+    const subtotalPaise = normalizedItems.reduce(
+      (sum, item) =>
+        sum +
+        Math.round(
+          Number(foodMap.get(item.food_id).price) * 100
+        ) * item.quantity,
       0
     );
 
+    const rewardDiscounts = {
+      0: 0,
+      50: 1000,
+      100: 2500
+    };
+
+    const discountPaise = rewardDiscounts[pointsRequested];
+
+    if (pointsRequested > 0) {
+      if (subtotalPaise < 10000) {
+        await connection.rollback();
+        return res.status(400).json({
+          message: "Minimum ₹100 order required to redeem points"
+        });
+      }
+
+      if (discountPaise * 4 > subtotalPaise) {
+        await connection.rollback();
+        return res.status(400).json({
+          message: "Rewards cannot exceed 25% of cart value"
+        });
+      }
+
+      // Lock wallet to prevent simultaneous redemptions.
+      const [wallets] = await connection.query(
+        `SELECT points_balance
+         FROM reward_wallets
+         WHERE user_id = ?
+         FOR UPDATE`,
+        [userId]
+      );
+
+      if (
+        wallets.length === 0 ||
+        Number(wallets[0].points_balance) < pointsRequested
+      ) {
+        await connection.rollback();
+        return res.status(409).json({
+          message: "Insufficient reward points"
+        });
+      }
+    }
+
+    const subtotal = subtotalPaise / 100;
+    const discount = discountPaise / 100;
+    const finalTotal = (subtotalPaise - discountPaise) / 100;
+
     const [orderResult] = await connection.query(
-  `INSERT INTO orders (user_id, total_amount, kitchen_note)
-   VALUES (?, ?, ?)`,
-  [
-    req.user.id,
-    calculatedTotal,
-    cleanKitchenNote || null
-  ]
-);
+      `INSERT INTO orders
+       (user_id, subtotal_amount, discount_amount,
+        reward_points_used, total_amount, kitchen_note)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        subtotal,
+        discount,
+        pointsRequested,
+        finalTotal,
+        cleanKitchenNote || null
+      ]
+    );
 
     const orderId = orderResult.insertId;
-
     const pickupToken =
       `MXL-${String(orderId).padStart(3, "0")}`;
 
@@ -766,12 +874,38 @@ if (cleanKitchenNote.length > 300) {
       [itemValues]
     );
 
+    if (pointsRequested > 0) {
+      await connection.query(
+        `UPDATE reward_wallets
+         SET points_balance = points_balance - ?,
+             total_redeemed = total_redeemed + ?
+         WHERE user_id = ?`,
+        [pointsRequested, pointsRequested, userId]
+      );
+
+      await connection.query(
+        `INSERT INTO reward_transactions
+         (user_id, order_id, type, points, description)
+         VALUES (?, ?, 'redeemed', ?, ?)`,
+        [
+          userId,
+          orderId,
+          pointsRequested,
+          `Redeemed ${pointsRequested} points for ₹${discount} off order #${orderId}`
+        ]
+      );
+    }
+
     await connection.commit();
 
     return res.status(201).json({
       message: "Order placed successfully",
       orderId,
-      pickupToken
+      pickupToken,
+      subtotal,
+      discount,
+      totalAmount: finalTotal,
+      rewardPointsUsed: pointsRequested
     });
 
   } catch (error) {
@@ -795,7 +929,6 @@ if (cleanKitchenNote.length > 300) {
     }
   }
 });
-
 
 // =========================
 // STUDENT ORDERS
@@ -1538,15 +1671,16 @@ app.delete(
 // ADMIN UPDATE ORDER STATUS
 // =========================
 
+
 app.patch(
   "/api/admin/orders/:id/status",
   authMiddleware,
   adminMiddleware,
-  (req, res) => {
+  async (req, res) => {
     const orderId = Number(req.params.id);
     const { status } = req.body;
 
-    if (!Number.isInteger(orderId) || orderId <= 0) {
+    if (!Number.isSafeInteger(orderId) || orderId <= 0) {
       return res.status(400).json({
         message: "Invalid order ID"
       });
@@ -1558,38 +1692,37 @@ app.patch(
       Ready: "Completed"
     };
 
-    const sql = `
-      SELECT status
-      FROM orders
-      WHERE id = ?
-    `;
+    let connection;
 
-    db.query(sql, [orderId], (err, results) => {
-      if (err) {
-        console.error(err);
+    try {
+      connection = await transactionPool.getConnection();
+      await connection.beginTransaction();
 
-        return res.status(500).json({
-          message: "Failed to check order status"
-        });
-      }
+      const [orders] = await connection.query(
+        `SELECT id, user_id, total_amount, status
+         FROM orders
+         WHERE id = ?
+         FOR UPDATE`,
+        [orderId]
+      );
 
-      if (results.length === 0) {
+      if (orders.length === 0) {
+        await connection.rollback();
         return res.status(404).json({
           message: "Order not found"
         });
       }
 
-      const currentStatus = results[0].status;
+      const order = orders[0];
+      const currentStatus = order.status;
 
-      if (currentStatus === "Cancelled") {
+      if (
+        currentStatus === "Cancelled" ||
+        currentStatus === "Completed"
+      ) {
+        await connection.rollback();
         return res.status(409).json({
-          message: "Cancelled orders cannot be updated"
-        });
-      }
-
-      if (currentStatus === "Completed") {
-        return res.status(409).json({
-          message: "Completed orders cannot be updated"
+          message: "This order cannot be updated"
         });
       }
 
@@ -1597,45 +1730,92 @@ app.patch(
         allowedTransitions[currentStatus];
 
       if (status !== expectedNextStatus) {
+        await connection.rollback();
         return res.status(400).json({
           message:
             `Order must move from ${currentStatus} to ${expectedNextStatus}`
         });
       }
 
-      const updateSql = `
-        UPDATE orders
-        SET status = ?
-        WHERE id = ?
-          AND status = ?
-      `;
-
-      db.query(
-        updateSql,
-        [status, orderId, currentStatus],
-        (err, result) => {
-          if (err) {
-            console.error(err);
-
-            return res.status(500).json({
-              message: "Failed to update order status"
-            });
-          }
-
-          if (result.affectedRows === 0) {
-            return res.status(409).json({
-              message:
-                "Order status changed. Please refresh and try again."
-            });
-          }
-
-          res.json({
-            message: "Order status updated successfully",
-            status
-          });
-        }
+      await connection.query(
+        `UPDATE orders
+         SET status = ?
+         WHERE id = ?`,
+        [status, orderId]
       );
-    });
+
+      let pointsEarned = 0;
+
+      if (status === "Completed") {
+        pointsEarned = Math.floor(
+          Number(order.total_amount) / 10
+        );
+
+        // Ensure the student has a rewards wallet
+        await connection.query(
+          `INSERT INTO reward_wallets (user_id)
+           VALUES (?)
+           ON DUPLICATE KEY UPDATE user_id = user_id`,
+          [order.user_id]
+        );
+
+        if (pointsEarned > 0) {
+          // Record points once for this order
+          await connection.query(
+            `INSERT INTO reward_transactions
+             (user_id, order_id, type, points, description)
+             VALUES (?, ?, 'earned', ?, ?)`,
+            [
+              order.user_id,
+              orderId,
+              pointsEarned,
+              `Points earned from order #${orderId}`
+            ]
+          );
+
+          // Update student's wallet
+          await connection.query(
+            `UPDATE reward_wallets
+             SET points_balance = points_balance + ?,
+                 total_earned = total_earned + ?
+             WHERE user_id = ?`,
+            [
+              pointsEarned,
+              pointsEarned,
+              order.user_id
+            ]
+          );
+        }
+      }
+
+      await connection.commit();
+
+      return res.json({
+        message: "Order status updated successfully",
+        status,
+        pointsEarned
+      });
+
+    } catch (error) {
+      console.error("Order status / rewards error:", error);
+
+      if (connection) {
+        try {
+          await connection.rollback();
+        } catch (rollbackError) {
+          console.error("Rollback error:", rollbackError);
+        }
+      }
+
+      return res.status(500).json({
+        message: "Failed to update order status"
+      });
+
+    } finally {
+      if (connection) {
+        connection.release();
+      }
+    }
   }
 );
 

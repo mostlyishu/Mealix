@@ -10720,3 +10720,79 @@ font-weight: 600;
   letter-spacing: -0.8px;
   color: var(--sienna, #a0522d);
 }
+
+.cart-rewards {
+  padding: 10px 0 20px;
+}
+
+.cart-rewards-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.cart-rewards-heading h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.cart-rewards-heading span {
+  color: #a36c38;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cart-rewards-description {
+  color: #777;
+  font-size: 13px;
+  margin-bottom: 15px;
+}
+
+.cart-rewards-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cart-reward-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid #e7dfd4;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.cart-reward-option input {
+  accent-color: #a36c38;
+}
+
+.cart-reward-option strong {
+  margin-left: auto;
+  color: #34855c;
+  font-size: 12px;
+}
+
+.cart-reward-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cart-rewards-note {
+  display: block;
+  margin-top: 13px;
+  color: #888;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.cart-payment-breakdown {
+  padding: 8px 0;
+}
+
+.cart-discount-amount {
+  color: #34855c;
+}

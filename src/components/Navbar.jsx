@@ -76,6 +76,13 @@ function Navbar() {
             </NavLink>
           )}
 
+          {/* MEALIX REWARDS - DESKTOP */}
+          {isStudent && (
+            <NavLink to="/rewards" className={getNavClass}>
+              ✦ Rewards
+            </NavLink>
+          )}
+
           {isLoggedIn && (
             <NavLink to="/orders" className={getNavClass}>
               My Orders
@@ -218,6 +225,16 @@ function Navbar() {
           </Link>
         )}
 
+        {/* MEALIX REWARDS - MOBILE */}
+        {isStudent && (
+          <Link
+            to="/rewards"
+            onClick={() => setMoreOpen(false)}
+          >
+            ✦ My Rewards
+          </Link>
+        )}
+
         {isLoggedIn && (
           <Link
             to="/orders"
@@ -292,7 +309,9 @@ function Navbar() {
           type="button"
           className={`mobile-bottom-link ${
             moreOpen ||
-            ["/cart", "/login", "/register"].includes(location.pathname)
+            ["/cart", "/login", "/register", "/rewards"].includes(
+              location.pathname
+            )
               ? "active"
               : ""
           }`}
