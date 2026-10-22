@@ -10975,3 +10975,145 @@ font-weight: 600;
 .mobile-more-panel a svg {
   flex-shrink: 0;
 }
+/* =========================
+   MEALIX HOME HERO ANIMATIONS
+   ========================= */
+
+/* =========================
+   SMOOTH HEADLINE ANIMATION
+   ========================= */
+
+.home-hero h1 .home-rotating-line {
+  display: block;
+  position: relative;
+  height: 1.25em;
+  margin-top: 4px;
+  overflow: hidden;
+  line-height: 1.15;
+}
+
+.home-hero h1 .home-phrase {
+  position: absolute;
+  inset: 0;
+  display: block;
+  margin: 0;
+  padding: 0;
+
+  font-family: var(--font-heading);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--sienna);
+
+  white-space: nowrap;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+.home-hero h1 .home-phrase-enter {
+  animation: mealix-enter 750ms ease-in-out both;
+}
+
+.home-hero h1 .home-phrase-exit {
+  animation: mealix-exit 750ms ease-in-out both;
+}
+
+/* Incoming phrase: slide up + gradual fade in */
+@keyframes mealix-enter {
+  from {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+  }
+
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+/* Outgoing phrase: slide up + gradual fade out */
+@keyframes mealix-exit {
+  from {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translate3d(0, -100%, 0);
+    opacity: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-hero h1 .home-phrase {
+    font-size: 0.82em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero h1 .home-phrase-enter,
+  .home-hero h1 .home-phrase-exit {
+    animation: none;
+  }
+
+  .home-hero h1 .home-phrase-exit {
+    display: none;
+  }
+}
+
+/* Floating feature badges */
+
+.hero-card-top {
+  animation: mealix-float-top 4s ease-in-out infinite;
+}
+
+.hero-card-bottom {
+  animation: mealix-float-bottom 5s ease-in-out infinite;
+}
+
+@keyframes mealix-float-top {
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes mealix-float-bottom {
+  0%, 100% {
+    transform: translateY(-7px);
+  }
+
+  50% {
+    transform: translateY(5px);
+  }
+}
+
+/* Gentle burger movement */
+
+.hero-food-emoji {
+  display: inline-block;
+  animation: mealix-burger-float 6s ease-in-out infinite;
+}
+
+@keyframes mealix-burger-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* Accessibility */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-card-top,
+  .hero-card-bottom,
+  .hero-food-emoji {
+    animation: none !important;
+  }
+}

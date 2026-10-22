@@ -8,6 +8,30 @@ function Home() {
     const { isLoggedIn, user } = useAuth();
     const isStudent = isLoggedIn && user?.role === "student";
     const [popularFoods, setPopularFoods] = useState([]);
+const heroPhrases = [
+  "Better breaks.",
+  "Faster bites.",
+  "Happier cravings.",
+  "Smarter dining."
+];
+
+const [heroSlide, setHeroSlide] = useState({
+  current: 0,
+  previous: null,
+  sequence: 0,
+});
+
+useEffect(() => {
+  const timer = setInterval(() => {
+    setHeroSlide((slide) => ({
+      current: (slide.current + 1) % heroPhrases.length,
+      previous: slide.current,
+      sequence: slide.sequence + 1,
+    }));
+  }, 2500);
+
+  return () => clearInterval(timer);
+}, []);
 
 useEffect(() => {
   async function fetchPopularFoods() {
@@ -59,11 +83,29 @@ function getFoodEmoji(name) {
                       A BETTER WAY TO EAT ON CAMPUS
                   </span>
 
-                  <h1>
-                      Good food.
-                      <span>Better breaks.</span>
-                  </h1>
+          <h1>
+            Good food.
 
+            <span className="home-rotating-line">
+              {heroSlide.previous !== null && (
+                <span
+                  key={`exit-${heroSlide.sequence}`}
+                  className="home-phrase home-phrase-exit"
+                  aria-hidden="true"
+                >
+                  {heroPhrases[heroSlide.previous]}
+                </span>
+              )}
+
+              <span
+                key={`enter-${heroSlide.sequence}`}
+                className={`home-phrase ${heroSlide.previous !== null ? "home-phrase-enter" : ""
+                  }`}
+              >
+                {heroPhrases[heroSlide.current]}
+              </span>
+            </span>
+          </h1>
                   <p className="home-hero-description">
                       Your campus favourites, freshly prepared and
                       just a few taps away. Skip the queue, savour
