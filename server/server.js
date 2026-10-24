@@ -642,13 +642,92 @@ app.get("/api/profile", authMiddleware, (req, res) => {
   });
 });
 
+// =========================
+// VALIDATE COUPON
+// =========================
 
+app.post("/api/coupons/validate", authMiddleware, async (req, res) => {
+  const code =
+    typeof req.body.code === "string"
+      ? req.body.code.trim().toUpperCase()
+      : "";
+
+  const subtotal = Number(req.body.subtotal);
+
+  if (!/^[A-Z0-9_-]{1,30}$/.test(code)) {
+    return res.status(400).json({
+      message: "Please enter a valid coupon code"
+    });
+  }
+
+  if (!Number.isFinite(subtotal) || subtotal <= 0) {
+    return res.status(400).json({
+      message: "Invalid cart amount"
+    });
+  }
+
+  try {
+    const [coupons] = await transactionPool.query(
+      `SELECT *
+       FROM coupons
+       WHERE code = ?
+         AND is_active = 1
+         AND expires_at > NOW()
+         AND (usage_limit IS NULL OR used_count < usage_limit)`,
+      [code]
+    );
+
+    if (coupons.length === 0) {
+      return res.status(400).json({
+        message: "Coupon is invalid, expired or unavailable"
+      });
+    }
+
+    const coupon = coupons[0];
+
+    if (subtotal < Number(coupon.min_order_amount)) {
+      return res.status(400).json({
+        message: `Minimum order ₹${coupon.min_order_amount} required`
+      });
+    }
+
+    let discount =
+      coupon.discount_type === "percentage"
+        ? (subtotal * Number(coupon.discount_value)) / 100
+        : Number(coupon.discount_value);
+
+    if (coupon.max_discount !== null) {
+      discount = Math.min(
+        discount,
+        Number(coupon.max_discount)
+      );
+    }
+
+    discount = Math.max(
+      0,
+      Math.min(subtotal, Math.round(discount * 100) / 100)
+    );
+
+    return res.json({
+      valid: true,
+      code: coupon.code,
+      discount,
+      finalTotal: Math.round((subtotal - discount) * 100) / 100,
+      message: "Coupon applied successfully!"
+    });
+
+  } catch (error) {
+    console.error("Coupon validation error:", error);
+
+    return res.status(500).json({
+      message: "Failed to validate coupon"
+    });
+  }
+});
 
 // =========================
 // CREATE ORDER
 // =========================
-
-
 
 app.post("/api/orders", authMiddleware, async (req, res) => {
   const { items, kitchen_note, reward_points = 0 } = req.body;
