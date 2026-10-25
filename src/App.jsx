@@ -17,6 +17,7 @@ import AdminAnalytics from "./pages/AdminAnalytics";
 import GroupBite from "./components/GroupBite";
 import PickupBoard from "./pages/PickupBoard";
 import Rewards from "./pages/Rewards";
+import Favourites from "./pages/SavedBites";
 
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -57,6 +58,7 @@ function AnimatedRoutes() {
               }
             />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/favourites" element={<Favourites />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/order-success" element={<OrderSuccess />} />

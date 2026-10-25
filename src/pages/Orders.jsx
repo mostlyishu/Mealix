@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import API_URL from "../config/api";
 
 function Orders() {
@@ -320,48 +321,65 @@ function Orders() {
       <span>{order.status}</span>
     </div>
 
-    <div className="order-tracker">
-      {statusSteps.map((status, index) => {
-        const completed =
-          index < currentStatusIndex ||
-          (
-            order.status === "Completed" &&
-            index === currentStatusIndex
-          );
 
-        const active =
-          index === currentStatusIndex;
+<div className="order-tracker">
+  {statusSteps.map((status, index) => {
+    const completed =
+      index < currentStatusIndex ||
+      (
+        order.status === "Completed" &&
+        index === currentStatusIndex
+      );
 
-        return (
-          <div
-            className="tracker-step"
-            key={status}
-          >
-            <div
-              className={`tracker-circle ${
-                completed
-                  ? "completed"
-                  : active
-                  ? "active"
-                  : ""
-              }`}
-            >
-              {completed ? "✓" : active ? "●" : index + 1}
-            </div>
+    const active = index === currentStatusIndex;
 
-            <span
-              className={
-                completed || active
-                  ? "tracker-label active"
-                  : "tracker-label"
-              }
-            >
-              {status}
-            </span>
-          </div>
-        );
-      })}
-    </div>
+    return (
+      <motion.div
+        className="tracker-step"
+        key={status}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{
+          duration: 0.25,
+          delay: index * 0.06,
+          ease: "easeOut"
+        }}
+      >
+<motion.div
+  className={`tracker-circle ${
+    completed
+      ? "completed"
+      : active
+      ? "active"
+      : ""
+  }`}
+  key={`${order.order_id}-${status}-${order.status}`}
+  initial={{ scale: 0.8, opacity: 0.6 }}
+  animate={{
+    scale: active ? [1, 1.12, 1] : 1,
+    opacity: 1,
+  }}
+  transition={{
+    duration: 0.45,
+    ease: "easeOut",
+  }}
+>
+  {completed ? "✓" : active ? "●" : index + 1}
+</motion.div>
+
+        <span
+          className={
+            completed || active
+              ? "tracker-label active"
+              : "tracker-label"
+          }
+        >
+          {status}
+        </span>
+      </motion.div>
+    );
+  })}
+</div>
   </div>
 )}
 

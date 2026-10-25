@@ -16,16 +16,19 @@ import {
   ChartNoAxesColumn,
   Menu as MenuIcon,
   LogIn,
-  UserPlus
+  UserPlus,
+  Heart
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import mealixLogo from "../assets/brand/mealix-logo.png";
 
+
 function Navbar() {
   const { user, logout, isLoggedIn } = useAuth();
   const { totalCartItems } = useCart();
+
 
   const [moreOpen, setMoreOpen] = useState(false);
   const location = useLocation();
@@ -56,6 +59,11 @@ const mobileItems = isAdmin
   : [
       { to: "/", label: "Home", icon: House },
       { to: "/menu", label: "Menu", icon: Utensils },
+    {
+      to: "/favourites",
+      label: "Saved Bites",
+      icon: Heart
+    },
       ...(isStudent
         ? [
             {
@@ -104,6 +112,12 @@ const mobileItems = isAdmin
     <Utensils size={17} strokeWidth={1.8} />
     Menu
   </NavLink>
+{!isAdmin && (
+  <NavLink to="/favourites" className={getNavClass}>
+    <Heart size={17} strokeWidth={1.8} />
+    Saved Bites
+  </NavLink>
+)}
 
   {isStudent && (
     <>
@@ -250,6 +264,15 @@ const mobileItems = isAdmin
         <Utensils size={17} strokeWidth={1.8} />
           Menu
         </Link>
+        {!isAdmin && (
+          <Link
+            to="/favourites"
+            onClick={() => setMoreOpen(false)}
+          >
+            <Heart size={17} />
+            Saved Bites
+          </Link>
+        )}
 
         {isStudent && (
           <Link

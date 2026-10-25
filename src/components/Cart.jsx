@@ -3,6 +3,7 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import API_URL from "../config/api";
+import { motion } from "motion/react";
 
 function Cart() {
   const {
@@ -327,32 +328,126 @@ async function handleApplyCoupon() {
 
       {cart.length === 0 ? (
 
+
         /* EMPTY CART */
 
-        <section className="empty-cart">
-          <div className="empty-cart-icon">
-            🛒
+        <motion.section
+          className="empty-cart"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease: "easeOut" }}
+        >
+          <div className="empty-cart-visual">
+            <motion.span
+              className="empty-food empty-food-one"
+              aria-hidden="true"
+              animate={{ y: [0, -10, 0], rotate: [-8, 5, -8] }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
+              🍔
+            </motion.span>
+
+            <motion.span
+              className="empty-food empty-food-two"
+              aria-hidden="true"
+              animate={{ y: [0, 9, 0], rotate: [8, -6, 8] }}
+              transition={{
+                duration: 3.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.3
+              }}
+            >
+              🍟
+            </motion.span>
+
+            <motion.span
+              className="empty-food empty-food-three"
+              aria-hidden="true"
+              animate={{ y: [0, -7, 0], rotate: [0, 12, 0] }}
+              transition={{
+                duration: 2.8,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.6
+              }}
+            >
+              🥤
+            </motion.span>
+
+            <motion.div
+              className="empty-cart-icon"
+              initial={{ scale: 0.7, rotate: -8 }}
+              animate={{ scale: [1, 1.06, 1], rotate: [0, 2, 0] }}
+              transition={{
+                scale: {
+                  duration: 2.4,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                },
+                rotate: {
+                  duration: 2.4,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }
+              }}
+            >
+              🛒
+            </motion.div>
           </div>
 
-          <span className="empty-cart-label">
+          <motion.span
+            className="empty-cart-label"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.15, duration: 0.4 }}
+          >
             NOTHING HERE YET
-          </span>
+          </motion.span>
 
-          <h2>Your cart is waiting for something delicious.</h2>
+          <motion.h2
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.45 }}
+          >
+            Your cart is waiting for something delicious.
+          </motion.h2>
 
-          <p>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.45 }}
+          >
             Explore today's campus menu and add your
             favourites to get started.
-          </p>
+          </motion.p>
 
-          <button
+          <motion.button
             className="browse-menu-button"
             onClick={() => navigate("/menu")}
+            whileHover={{ scale: 1.04, y: -2 }}
+            whileTap={{ scale: 0.96 }}
+            transition={{ type: "spring", stiffness: 350, damping: 18 }}
           >
             Browse Menu
-            <span>→</span>
-          </button>
-        </section>
+            <motion.span
+              aria-hidden="true"
+              animate={{ x: [0, 4, 0] }}
+              transition={{
+                duration: 1.3,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            >
+              →
+            </motion.span>
+          </motion.button>
+        </motion.section>
+
       ) : (
         <div className="cart-layout">
 

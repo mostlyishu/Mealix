@@ -11602,3 +11602,341 @@ font-weight: 600;
     padding: 12px;
   }
 }
+
+/* Animate the current Pending order step */
+.tracker-circle.active {
+  animation: pendingPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pendingPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tracker-circle.active {
+    animation: none;
+  }
+}
+
+/* Mealix — animated empty cart */
+.empty-cart-visual {
+  position: relative;
+  width: 220px;
+  height: 180px;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-cart-visual .empty-cart-icon {
+  position: relative;
+  z-index: 1;
+  width: 116px;
+  height: 116px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 36px;
+  background: linear-gradient(145deg, #fff2df, #ffe2b8);
+  box-shadow: 0 14px 35px rgba(190, 113, 34, 0.12);
+  font-size: 58px;
+  will-change: transform;
+}
+
+.empty-food {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  font-size: 30px;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.empty-food-one {
+  top: 15px;
+  left: 20px;
+}
+
+.empty-food-two {
+  top: 25px;
+  right: 14px;
+}
+
+.empty-food-three {
+  bottom: 8px;
+  right: 32px;
+}
+
+.empty-cart .empty-cart-label {
+  display: inline-block;
+}
+
+.empty-cart .browse-menu-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  cursor: pointer;
+  transform-origin: center;
+}
+
+.empty-cart .browse-menu-button span {
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .empty-cart-visual *,
+  .empty-cart .browse-menu-button span {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Mealix — animated food favourites */
+.food-image {
+  position: relative;
+}
+
+
+/* Minimal Mealix favourite button */
+.food-favorite-button {
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  z-index: 5;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.88);
+  color: #77716a;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(45, 30, 15, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.food-favorite-button.is-favorite {
+  background: #fff1f2;
+  color: #e65370;
+  border-color: #ffe0e5;
+}
+
+.food-favorite-button:focus-visible {
+  outline: 2px solid #e65370;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .food-favorite-button {
+    transition: none;
+  }
+}
+
+/* Mealix — Favourites page */
+.favorites-page {
+  width: min(1200px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 30px 0 100px;
+}
+
+.favorites-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #716b63;
+  text-decoration: none;
+  font-size: 13px;
+  margin-bottom: 32px;
+}
+
+.favorites-back-link:hover {
+  color: #d94e68;
+}
+
+.favorites-header {
+  margin-bottom: 32px;
+}
+
+.favorites-eyebrow {
+  color: #c17b43;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+}
+
+.favorites-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0 8px;
+}
+
+.favorites-title-row h1 {
+  margin: 0;
+  font-size: clamp(27px, 4vw, 38px);
+  letter-spacing: -1.2px;
+}
+
+.favorites-title-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: 15px;
+  background: #fff0f2;
+  color: #e65370;
+}
+
+.favorites-count {
+  display: grid;
+  place-items: center;
+  min-width: 25px;
+  height: 25px;
+  padding: 0 7px;
+  border-radius: 20px;
+  background: #f4eee7;
+  color: #675747;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.favorites-header > p {
+  margin: 0;
+  color: #77716a;
+  font-size: 14px;
+}
+
+.favorites-results-heading {
+  margin-bottom: 18px;
+  color: #77716a;
+  font-size: 13px;
+}
+
+.favorites-results-heading p {
+  margin: 0;
+}
+
+.favorites-results-heading strong {
+  color: #28231f;
+}
+
+.favorites-empty,
+.favorites-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 290px;
+  padding: 32px 20px;
+  text-align: center;
+  border: 1px solid #eee7df;
+  border-radius: 22px;
+  background: linear-gradient(145deg, #fffdfa, #fff8f0);
+}
+
+.favorites-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  margin-bottom: 18px;
+  border-radius: 25px;
+  background: #fff0f2;
+  color: #e65370;
+}
+
+.favorites-empty h2,
+.favorites-state h2 {
+  margin: 0 0 9px;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+}
+
+.favorites-empty p,
+.favorites-state p {
+  max-width: 390px;
+  margin: 0 0 20px;
+  color: #77716a;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.favorites-browse-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 19px;
+  border-radius: 12px;
+  background: #30271f;
+  color: white;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.favorites-browse-button:hover {
+  background: #514031;
+  transform: translateY(-2px);
+}
+
+.favorites-loader {
+  width: 27px;
+  height: 27px;
+  margin-bottom: 15px;
+  border: 2px solid #eaded0;
+  border-top-color: #c17b43;
+  border-radius: 50%;
+  animation: favoritesSpin 0.75s linear infinite;
+}
+
+@keyframes favoritesSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 600px) {
+  .favorites-page {
+    width: calc(100% - 28px);
+    padding-top: 22px;
+  }
+
+  .favorites-title-row {
+    gap: 9px;
+  }
+
+  .favorites-title-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+  }
+
+  .favorites-empty {
+    min-height: 270px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .favorites-loader {
+    animation: none;
+  }
+
+  .favorites-browse-button {
+    transition: none;
+  }
+}

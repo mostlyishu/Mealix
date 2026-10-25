@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import FoodCard from "../components/FoodCard";
 import { useCart } from "../context/CartContext";
 import API_URL from "../config/api";
+import { motion } from "motion/react";
 
 function Menu() {
   const {
@@ -766,38 +767,69 @@ async function findBreakMeals() {
             </button>
           </div>
         )}
+ 
 
-
-      {/* FOOD GRID */}
-
+   {/* FOOD GRID */}
       {!loading &&
         !error &&
         filteredFoods.length > 0 && (
-          <section className="food-grid">
-                  {filteredFoods.map((food) => {
-                      const cartItem = cart.find(
-                          (item) => item.id === food.id
-                      );
+          <motion.section
+            className="food-grid"
+            variants={{
+              hidden: {},
+              visible: {
+                transition: {
+                  staggerChildren: 0.09
+                }
+              }
+            }}
+            initial="hidden"
+            animate="visible"
+          >
+            {filteredFoods.map((food) => {
+              const cartItem = cart.find(
+                (item) => Number(item.id) === Number(food.id)
+              );
 
-                      return (
-                          <FoodCard
-                              key={food.id}
-                              id={food.id}
-                              name={food.name}
-                              price={food.price}
-                              category={food.category}
-                              description={food.description}
-                              available={Number(food.available) === 1}
-                              imageUrl={food.image_url}
-                              quantity={cartItem?.quantity || 0}
-                              onAdd={() => addToCart(food)}
-                              onIncrease={increaseQuantity}
-                              onDecrease={decreaseQuantity}
-                          />
-                      );
-                  })}
-          </section>
+              return (
+                <motion.div
+                  key={food.id}
+                  variants={{
+                    hidden: {
+                      opacity: 0,
+                      y: 22,
+                      scale: 0.98
+                    },
+                    visible: {
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      transition: {
+                        duration: 0.35,
+                        ease: "easeOut"
+                      }
+                    }
+                  }}
+                >
+                  <FoodCard
+                    id={food.id}
+                    name={food.name}
+                    price={food.price}
+                    category={food.category}
+                    description={food.description}
+                    available={Number(food.available) === 1}
+                    imageUrl={food.image_url}
+                    quantity={cartItem?.quantity || 0}
+                    onAdd={() => addToCart(food)}
+                    onIncrease={increaseQuantity}
+                    onDecrease={decreaseQuantity}
+                  />
+                </motion.div>
+              );
+            })}
+          </motion.section>
         )}
+
       {totalCartItems > 0 && (
   <div className="menu-cart-popup">
     <div className="menu-cart-popup-info">

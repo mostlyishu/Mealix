@@ -2,6 +2,18 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 
+const FAVORITES_KEY = "mealix_favorites";
+
+function getSavedFavorites() {
+  try {
+    const saved = localStorage.getItem(FAVORITES_KEY);
+    const parsed = saved ? JSON.parse(saved) : [];
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
 function FoodCard({
   id,
   name,
@@ -16,6 +28,9 @@ function FoodCard({
   onDecrease
 }) {
   const [justAdded, setJustAdded] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState(getSavedFavorites);
+
+  const isFavorite = favoriteIds.includes(String(id));
 
   useEffect(() => {
     if (!justAdded) return;
@@ -43,6 +58,23 @@ function FoodCard({
   function handleAdd() {
     onAdd();
     setJustAdded(true);
+  }
+
+  function toggleFavorite() {
+    const currentFavorites = getSavedFavorites();
+    const foodId = String(id);
+
+    const updatedFavorites = currentFavorites.includes(foodId)
+      ? currentFavorites.filter((favoriteId) => favoriteId !== foodId)
+      : [...currentFavorites, foodId];
+
+    localStorage.setItem(
+      FAVORITES_KEY,
+      JSON.stringify(updatedFavorites)
+    );
+
+    setFavoriteIds(updatedFavorites);
+    window.dispatchEvent(new Event("mealix-favorites-updated"));
   }
 
   return (
@@ -74,6 +106,40 @@ function FoodCard({
         </div>
 
         <span className="food-image-category">{category}</span>
+
+
+<motion.button
+  type="button"
+  className={`food-favorite-button ${
+    isFavorite ? "is-favorite" : ""
+  }`}
+  onClick={toggleFavorite}
+  whileTap={{ scale: 0.88 }}
+  aria-label={
+    isFavorite
+      ? `Remove ${name} from favourites`
+      : `Add ${name} to favourites`
+  }
+  aria-pressed={isFavorite}
+>
+  <motion.svg
+    key={isFavorite ? "liked" : "unliked"}
+    viewBox="0 0 24 24"
+    width="19"
+    height="19"
+    fill={isFavorite ? "currentColor" : "none"}
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    initial={{ scale: 0.75 }}
+    animate={{ scale: 1 }}
+    transition={{ type: "spring", stiffness: 400, damping: 14 }}
+    aria-hidden="true"
+  >
+    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" />
+  </motion.svg>
+</motion.button>
 
         {!available && (
           <span className="food-unavailable-badge">
@@ -144,7 +210,7 @@ function FoodCard({
           )}
         </div>
       </div>
-</article>
+    </article>
   );
 }
 
