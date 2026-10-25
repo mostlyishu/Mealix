@@ -24,6 +24,9 @@ const [pointsBalance, setPointsBalance] = useState(0);
 const [rewardsLoading, setRewardsLoading] = useState(false);
 const [rewardsOpen, setRewardsOpen] = useState(false);
 const [pendingReward, setPendingReward] = useState(0);
+const [couponInput, setCouponInput] = useState("");
+const [appliedCoupon, setAppliedCoupon] = useState(null);
+const [couponLoading, setCouponLoading] = useState(false);
 
   const totalItems = cart.reduce(
     (sum, food) => sum + food.quantity,
@@ -31,10 +34,34 @@ const [pendingReward, setPendingReward] = useState(0);
   );
 
   const total = cart.reduce(
-    (sum, food) =>
-      sum + Number(food.price) * food.quantity,
-    0
-  );
+  (sum, food) =>
+    sum + Number(food.price) * food.quantity,
+  0
+);
+
+// CLEAR COUPON WHEN CART CHANGES
+const cartSignature = JSON.stringify(
+  cart.map((food) => [
+    food.id,
+    food.quantity,
+    food.price
+  ])
+);
+
+useEffect(() => {
+  setAppliedCoupon(null);
+}, [cartSignature]);
+
+// YOUR EXISTING REWARDS EFFECT
+useEffect(() => {
+  if (!isLoggedIn) {
+    setPointsBalance(0);
+    setRewardPoints(0);
+    return;
+  }
+
+  // ... remaining existing code
+}, [isLoggedIn]);
    
   useEffect(() => {
   if (!isLoggedIn) {
@@ -109,12 +136,89 @@ const rewardIsValid =
     selectedReward.discount
   );
 
-const discount = rewardIsValid ? selectedReward.discount : 0;
-const payableTotal = total - discount;
-const appliedRewardPoints = rewardIsValid ? rewardPoints : 0;
+const rewardDiscount = rewardIsValid
+  ? selectedReward.discount
+  : 0;
+
+const couponDiscount = appliedCoupon
+  ? appliedCoupon.discount
+  : 0;
+
+const discount = couponDiscount || rewardDiscount;
+const payableTotal = Math.max(0, total - discount);
+
+const appliedRewardPoints =
+  appliedCoupon ? 0 : rewardIsValid ? rewardPoints : 0;
+
+async function handleApplyCoupon() {
+  if (couponLoading || placingOrder) return;
+
+  if (!isLoggedIn) {
+    setMessage("Please log in to apply a coupon.");
+    return;
+  }
+
+  const code = couponInput.trim().toUpperCase();
+
+  if (!code) {
+    setMessage("Please enter a coupon code.");
+    return;
+  }
+
+  if (appliedRewardPoints > 0) {
+    setMessage("Remove your Rewards discount before applying a coupon.");
+    return;
+  }
+
+  try {
+    setCouponLoading(true);
+    setMessage("");
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `${API_URL}/api/coupons/validate`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          code,
+          subtotal: total
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Invalid coupon");
+    }
+
+    setAppliedCoupon({
+      code: data.code,
+      discount: Number(data.discount)
+    });
+
+    setCouponInput(data.code);
+    setMessage("Coupon applied successfully!");
+
+  } catch (error) {
+    setAppliedCoupon(null);
+    setMessage(error.message);
+  } finally {
+    setCouponLoading(false);
+  }
+}
 
   async function handlePlaceOrder() {
     if (placingOrder) return;
+    if (couponLoading) {
+      setMessage("Please wait for coupon validation.");
+      return;
+    }
     if (cart.length === 0) {
       setMessage("Your cart is empty.");
       return;
@@ -158,7 +262,8 @@ const appliedRewardPoints = rewardIsValid ? rewardPoints : 0;
           body: JSON.stringify({
             items: orderItems,
             kitchen_note: kitchenNote.trim(),
-            reward_points: appliedRewardPoints
+            reward_points: appliedRewardPoints,
+            coupon_code: appliedCoupon ? appliedCoupon.code : ""
           })
         }
       );
@@ -409,10 +514,15 @@ const appliedRewardPoints = rewardIsValid ? rewardPoints : 0;
   <button
     type="button"
     className="rewards-toggle"
-    onClick={() => {
-      setRewardsOpen((open) => !open);
-      setPendingReward(appliedRewardPoints);
-    }}
+                  onClick={() => {
+                    if (appliedCoupon && pendingReward > 0) {
+                      setMessage("Remove your coupon before using Rewards.");
+                      return;
+                    }
+
+                    setRewardPoints(pendingReward);
+                    setRewardsOpen(false);
+                  }}
     aria-expanded={rewardsOpen}
     disabled={placingOrder}
   >
@@ -528,17 +638,95 @@ const appliedRewardPoints = rewardIsValid ? rewardPoints : 0;
 </div>
 
 
+{/* MEALIX COUPONS */}
+<div className="cart-coupons">
+  <div className="coupon-heading">
+    <div className="coupon-title-row">
+      <span className="coupon-icon">🏷️</span>
+      <div>
+        <strong>Offers & Coupons</strong>
+        <p>Unlock savings on your order</p>
+      </div>
+    </div>
+  </div>
+
+  {appliedCoupon ? (
+    <div className="coupon-applied">
+      <div className="coupon-applied-info">
+        <span className="coupon-success-icon">✓</span>
+        <div>
+          <strong>{appliedCoupon.code}</strong>
+          <p>You're saving ₹{appliedCoupon.discount.toFixed(2)}</p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="coupon-remove-button"
+        onClick={() => {
+          setAppliedCoupon(null);
+          setCouponInput("");
+          setMessage("");
+        }}
+        disabled={placingOrder}
+      >
+        Remove
+      </button>
+    </div>
+  ) : (
+    <>
+      <div className="coupon-input-row">
+        <input
+          type="text"
+          className="coupon-code-input"
+          placeholder="Enter coupon code"
+          value={couponInput}
+          onChange={(e) =>
+            setCouponInput(e.target.value.toUpperCase())
+          }
+          maxLength={30}
+          disabled={couponLoading || placingOrder}
+        />
+
+        <button
+          type="button"
+          className="coupon-apply-button"
+          onClick={handleApplyCoupon}
+          disabled={
+            couponLoading ||
+            placingOrder ||
+            !couponInput.trim()
+          }
+        >
+          {couponLoading ? "Applying..." : "Apply"}
+        </button>
+      </div>
+
+      <p className="coupon-rules">
+        One coupon per order. Cannot combine with Rewards.
+      </p>
+    </>
+  )}
+</div>
+
+
+
 <div className="summary-divider" />
 
 <div className="cart-payment-breakdown">
-  {discount > 0 && (
-    <div className="summary-row">
-      <span>Rewards discount</span>
-      <strong className="cart-discount-amount">
-        −₹{discount.toFixed(2)}
-      </strong>
-    </div>
-  )}
+{discount > 0 && (
+  <div className="summary-row">
+    <span>
+      {appliedCoupon
+        ? `Coupon (${appliedCoupon.code})`
+        : "Rewards discount"}
+    </span>
+
+    <strong className="cart-discount-amount">
+      −₹{discount.toFixed(2)}
+    </strong>
+  </div>
+)}
 
   <div className="summary-row">
     <span>Amount to pay</span>
@@ -570,7 +758,7 @@ const appliedRewardPoints = rewardIsValid ? rewardPoints : 0;
             <button
               className="place-order-button"
               onClick={handlePlaceOrder}
-              disabled={placingOrder}
+              disabled={placingOrder || couponLoading}
             >
               {placingOrder
                 ? "Placing Order..."

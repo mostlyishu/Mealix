@@ -11,11 +11,65 @@ function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [pulseRefreshKey, setPulseRefreshKey] = useState(0);
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
+  const [coupons, setCoupons] = useState([]);
+const [couponsLoading, setCouponsLoading] = useState(false);
+const [couponError, setCouponError] = useState("");
+const [couponMessage, setCouponMessage] = useState("");
+const [showCouponForm, setShowCouponForm] = useState(false);
+const [savingCoupon, setSavingCoupon] = useState(false);
+const [updatingCouponId, setUpdatingCouponId] = useState(null);
 
-  useEffect(() => {
-    fetchOrders();
-    fetchStats();
-  }, []);
+const [couponForm, setCouponForm] = useState({
+  code: "",
+  discount_type: "percentage",
+  discount_value: "",
+  min_order_amount: "0",
+  max_discount: "",
+  usage_limit: "",
+  expires_at: "",
+});
+
+useEffect(() => {
+  fetchOrders();
+  fetchStats();
+  fetchCoupons();
+}, []);
+
+// =========================
+// FETCH ALL ORDERS
+// =========================
+
+async function fetchOrders() {
+  try {
+    setLoading(true);
+    setError("");
+
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `${API_URL}/api/admin/orders`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to fetch admin orders"
+      );
+    }
+
+    setOrders(data);
+  } catch (error) {
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+}
 
   // =========================
   // FETCH DASHBOARD STATS
@@ -48,40 +102,86 @@ function AdminOrders() {
     }
   }
 
-  // =========================
-  // FETCH ALL ORDERS
-  // =========================
+// =========================
+// FETCH ADMIN COUPONS
+// =========================
 
-  async function fetchOrders() {
-    try {
-      setLoading(true);
+async function fetchCoupons() {
+  try {
+    setCouponsLoading(true);
+    setCouponError("");
 
-      const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
 
-      const response = await fetch(
-        `${API_URL}/api/admin/orders`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          "Access denied. Admins only."
-        );
+    const response = await fetch(
+      `${API_URL}/api/admin/coupons`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
+    );
 
-      const data = await response.json();
+    const data = await response.json();
 
-      setOrders(data);
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to fetch coupons"
+      );
     }
+
+    setCoupons(data);
+  } catch (error) {
+    setCouponError(error.message);
+  } finally {
+    setCouponsLoading(false);
   }
+}
+
+// =========================
+// ENABLE / DISABLE COUPON
+// =========================
+
+async function toggleCouponStatus(coupon) {
+  if (updatingCouponId !== null) return;
+
+  setUpdatingCouponId(coupon.id);
+  setCouponError("");
+  setCouponMessage("");
+
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `${API_URL}/api/admin/coupons/${coupon.id}/status`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          is_active: !Boolean(coupon.is_active),
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Failed to update coupon"
+      );
+    }
+
+    setCouponMessage(data.message);
+    await fetchCoupons();
+  } catch (error) {
+    setCouponError(error.message);
+  } finally {
+    setUpdatingCouponId(null);
+  }
+}
 
   // =========================
   // UPDATE ORDER STATUS
@@ -138,6 +238,70 @@ function AdminOrders() {
   finally {
   setUpdatingOrderId(null);
 }
+}
+
+
+async function handleCreateCoupon(event) {
+  event.preventDefault();
+
+  if (savingCoupon) return;
+
+  setSavingCoupon(true);
+  setCouponError("");
+  setCouponMessage("");
+
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `${API_URL}/api/admin/coupons`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...couponForm,
+          code: couponForm.code.trim().toUpperCase(),
+          discount_value: Number(couponForm.discount_value),
+          min_order_amount: Number(couponForm.min_order_amount || 0),
+          max_discount:
+            couponForm.max_discount === ""
+              ? null
+              : Number(couponForm.max_discount),
+          usage_limit:
+            couponForm.usage_limit === ""
+              ? null
+              : Number(couponForm.usage_limit),
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to create coupon");
+    }
+
+    setCouponMessage(`Coupon ${data.code} created successfully!`);
+    setCouponForm({
+      code: "",
+      discount_type: "percentage",
+      discount_value: "",
+      min_order_amount: "0",
+      max_discount: "",
+      usage_limit: "",
+      expires_at: "",
+    });
+    setShowCouponForm(false);
+
+    await fetchCoupons();
+  } catch (error) {
+    setCouponError(error.message);
+  } finally {
+    setSavingCoupon(false);
+  }
 }
 
 function getNextStatus(status) {
@@ -432,6 +596,323 @@ function getStatusActionLabel(status) {
          ========================= */}
 
      <KitchenPulse refreshKey={pulseRefreshKey} />
+         
+
+{/* =========================
+    COUPON MANAGEMENT
+========================= */}
+
+<section className="admin-v2-orders admin-coupon-management">
+  <div className="admin-v2-section-heading">
+    <div>
+      <h2>Coupon Management</h2>
+      <p>Create discounts and manage promotional codes.</p>
+    </div>
+
+    <button
+      type="button"
+      className="admin-v2-refresh"
+      onClick={() => {
+        setCouponMessage("");
+        fetchCoupons();
+      }}
+      disabled={couponsLoading}
+    >
+      {couponsLoading ? "Loading..." : "↻ Refresh Coupons"}
+    </button>
+  </div>
+
+  <div className="admin-coupon-summary">
+    <article>
+      <span>Total Coupons</span>
+      <strong>{coupons.length}</strong>
+    </article>
+    <article>
+      <span>Active Coupons</span>
+      <strong>
+        {coupons.filter((coupon) => Boolean(coupon.is_active)).length}
+      </strong>
+    </article>
+    <article>
+      <span>Total Redemptions</span>
+      <strong>
+        {coupons.reduce(
+          (total, coupon) => total + Number(coupon.used_count || 0),
+          0
+        )}
+      </strong>
+    </article>
+  </div>
+
+  <div className="admin-coupon-toolbar">
+    <div>
+      <h3>All Coupons</h3>
+      <p>Review usage, validity and status.</p>
+    </div>
+
+    <button
+      type="button"
+      className="admin-status-action-button"
+      onClick={() => {
+        setCouponError("");
+        setCouponMessage("");
+        setShowCouponForm((previous) => !previous);
+      }}
+    >
+      {showCouponForm ? "Cancel" : "+ Create Coupon"}
+    </button>
+  </div>
+
+  {couponError && (
+    <div className="admin-v2-error">
+      <span>!</span>
+      <p>{couponError}</p>
+    </div>
+  )}
+
+  {couponMessage && (
+    <div className="admin-coupon-message" role="status">
+      {couponMessage}
+    </div>
+  )}
+
+  {showCouponForm && (
+    <form
+      className="admin-coupon-form"
+      onSubmit={handleCreateCoupon}
+    >
+      <h3>Create New Coupon</h3>
+
+      <div className="admin-coupon-form-grid">
+        <label>
+          Coupon Code *
+          <input
+            type="text"
+            required
+            maxLength={30}
+            pattern="[A-Za-z0-9_-]+"
+            placeholder="e.g. CAMPUS15"
+            value={couponForm.code}
+            onChange={(event) =>
+              setCouponForm({
+                ...couponForm,
+                code: event.target.value.toUpperCase(),
+              })
+            }
+          />
+        </label>
+
+        <label>
+          Discount Type *
+          <select
+            value={couponForm.discount_type}
+            onChange={(event) =>
+              setCouponForm({
+                ...couponForm,
+                discount_type: event.target.value,
+              })
+            }
+          >
+            <option value="percentage">Percentage (%)</option>
+            <option value="fixed">Fixed amount (₹)</option>
+          </select>
+        </label>
+
+        <label>
+          Discount Value *
+          <input
+            type="number"
+            required
+            min="0.01"
+            max={couponForm.discount_type === "percentage" ? "100" : undefined}
+            step="0.01"
+            value={couponForm.discount_value}
+            onChange={(event) =>
+              setCouponForm({
+                ...couponForm,
+                discount_value: event.target.value,
+              })
+            }
+          />
+        </label>
+
+        <label>
+          Minimum Order (₹)
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={couponForm.min_order_amount}
+            onChange={(event) =>
+              setCouponForm({
+                ...couponForm,
+                min_order_amount: event.target.value,
+              })
+            }
+          />
+        </label>
+
+        <label>
+          Maximum Discount (₹)
+          <input
+            type="number"
+            min="0.01"
+            step="0.01"
+            placeholder="Optional"
+            value={couponForm.max_discount}
+            onChange={(event) =>
+              setCouponForm({
+                ...couponForm,
+                max_discount: event.target.value,
+              })
+            }
+          />
+        </label>
+
+        <label>
+          Usage Limit
+          <input
+            type="number"
+            min="1"
+            step="1"
+            placeholder="Unlimited"
+            value={couponForm.usage_limit}
+            onChange={(event) =>
+              setCouponForm({
+                ...couponForm,
+                usage_limit: event.target.value,
+              })
+            }
+          />
+        </label>
+
+        <label className="admin-coupon-expiry">
+          Expiry Date & Time *
+          <input
+            type="datetime-local"
+            required
+            min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
+              .toISOString()
+              .slice(0, 16)}
+            value={couponForm.expires_at}
+            onChange={(event) =>
+              setCouponForm({
+                ...couponForm,
+                expires_at: event.target.value,
+              })
+            }
+          />
+        </label>
+      </div>
+
+      <button
+        type="submit"
+        className="admin-status-action-button"
+        disabled={savingCoupon}
+      >
+        {savingCoupon ? "Creating..." : "Create Coupon"}
+      </button>
+    </form>
+  )}
+
+  {couponsLoading ? (
+    <div className="admin-v2-loading">
+      <div className="admin-v2-loader" />
+      <h3>Loading coupons...</h3>
+    </div>
+  ) : coupons.length === 0 ? (
+    <div className="admin-v2-empty">
+      <h3>No coupons found</h3>
+      <p>Create your first promotional coupon.</p>
+    </div>
+  ) : (
+    <div className="admin-coupon-list">
+      {coupons.map((coupon) => {
+        const active = Boolean(coupon.is_active);
+        const usageLimit = coupon.usage_limit;
+        const expired = new Date(coupon.expires_at).getTime() <= Date.now();
+        const exhausted =
+          usageLimit !== null &&
+          Number(coupon.used_count) >= Number(usageLimit);
+
+        return (
+          <article className="admin-coupon-card" key={coupon.id}>
+            <div className="admin-coupon-card-top">
+              <div>
+                <span className="admin-order-label">COUPON CODE</span>
+                <h3>{coupon.code}</h3>
+                <p>
+                  {coupon.discount_type === "percentage"
+                    ? `${Number(coupon.discount_value)}% off`
+                    : `₹${Number(coupon.discount_value)} off`}
+                </p>
+              </div>
+
+              <span
+                className={`admin-coupon-status ${
+                  active && !expired && !exhausted ? "active" : "inactive"
+                }`}
+              >
+                {!active
+                  ? "Disabled"
+                  : expired
+                    ? "Expired"
+                    : exhausted
+                      ? "Limit Reached"
+                      : "Active"}
+              </span>
+            </div>
+
+            <div className="admin-coupon-details">
+              <div>
+                <span>Minimum Order</span>
+                <strong>₹{Number(coupon.min_order_amount || 0).toFixed(0)}</strong>
+              </div>
+
+              <div>
+                <span>Max Discount</span>
+                <strong>
+                  {coupon.max_discount == null
+                    ? "No cap"
+                    : `₹${Number(coupon.max_discount).toFixed(0)}`}
+                </strong>
+              </div>
+
+              <div>
+                <span>Redemptions</span>
+                <strong>
+                  {coupon.used_count}
+                  {usageLimit == null ? " / ∞" : ` / ${usageLimit}`}
+                </strong>
+              </div>
+
+              <div>
+                <span>Expires</span>
+                <strong>
+                  {new Date(coupon.expires_at).toLocaleDateString()}
+                </strong>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="admin-status-action-button"
+              disabled={updatingCouponId !== null}
+              onClick={() => toggleCouponStatus(coupon)}
+            >
+              {updatingCouponId === coupon.id
+                ? "Updating..."
+                : active
+                  ? "Disable Coupon"
+                  : "Enable Coupon"}
+            </button>
+          </article>
+        );
+      })}
+    </div>
+  )}
+</section>
+
 
       {/* =========================
           ORDERS

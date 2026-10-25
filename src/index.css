@@ -11117,3 +11117,362 @@ font-weight: 600;
     animation: none !important;
   }
 }
+
+/* ===== Mealix Coupon UI ===== */
+
+.cart-coupons {
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid #e8e5df;
+  border-radius: 14px;
+  background: #fffdf9;
+}
+
+.coupon-heading {
+  margin-bottom: 14px;
+}
+
+.coupon-title-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.coupon-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  background: #fff0d9;
+  font-size: 20px;
+}
+
+.coupon-title-row strong {
+  display: block;
+  font-size: 16px;
+  line-height: 1.4;
+  color: #24211e;
+}
+
+.coupon-title-row p {
+  margin: 3px 0 0;
+  color: #77716a;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.coupon-input-row {
+  display: flex;
+  align-items: stretch;
+  gap: 9px;
+}
+
+.coupon-code-input {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  padding: 12px 13px;
+  border: 1px solid #ded9d0;
+  border-radius: 9px;
+  outline: none;
+  background: #fff;
+  color: #292621;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.coupon-code-input:focus {
+  border-color: #d97706;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12);
+}
+
+.coupon-apply-button {
+  padding: 0 17px;
+  border: none;
+  border-radius: 9px;
+  background: #24211e;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.coupon-apply-button:hover:not(:disabled) {
+  background: #43382c;
+  transform: translateY(-1px);
+}
+
+.coupon-apply-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.coupon-rules {
+  margin: 10px 0 0;
+  color: #77716a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.coupon-applied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #cde7d3;
+  border-radius: 10px;
+  background: #f3faf4;
+}
+
+.coupon-applied-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.coupon-success-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #d9f0df;
+  color: #23743c;
+  font-weight: 700;
+}
+
+.coupon-applied-info strong {
+  display: block;
+  color: #236b38;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.coupon-applied-info p {
+  margin: 3px 0 0;
+  color: #477552;
+  font-size: 12px;
+}
+
+.coupon-remove-button {
+  flex-shrink: 0;
+  padding: 7px 10px;
+  border: 1px solid #d8e6da;
+  border-radius: 7px;
+  background: #fff;
+  color: #3f6247;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.coupon-remove-button:hover:not(:disabled) {
+  background: #e6f4e9;
+}
+
+.coupon-remove-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 420px) {
+  .cart-coupons {
+    padding: 13px;
+  }
+
+  .coupon-input-row {
+    gap: 7px;
+  }
+
+  .coupon-apply-button {
+    padding: 0 13px;
+  }
+}
+
+/* Admin Coupon Management */
+.admin-coupon-management {
+  margin-top: 28px;
+}
+
+.admin-coupon-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 22px 0 30px;
+}
+
+.admin-coupon-summary article,
+.admin-coupon-card {
+  padding: 20px;
+  border: 1px solid #e8e8e8;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.admin-coupon-summary article {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-coupon-summary span,
+.admin-coupon-details span {
+  color: #777;
+  font-size: 13px;
+}
+
+.admin-coupon-summary strong {
+  font-size: 26px;
+}
+
+.admin-coupon-toolbar,
+.admin-coupon-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.admin-coupon-toolbar {
+  margin-bottom: 18px;
+}
+
+.admin-coupon-toolbar h3,
+.admin-coupon-form h3,
+.admin-coupon-card h3 {
+  margin: 0 0 6px;
+}
+
+.admin-coupon-toolbar p,
+.admin-coupon-card-top p {
+  margin: 0;
+  color: #777;
+}
+
+.admin-coupon-form {
+  padding: 22px;
+  margin: 20px 0;
+  border: 1px solid #e8e8e8;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.admin-coupon-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+
+.admin-coupon-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-coupon-form input,
+.admin-coupon-form select {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 9px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.admin-coupon-expiry {
+  grid-column: 1 / -1;
+}
+
+.admin-coupon-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.admin-coupon-card {
+  min-width: 0;
+}
+
+.admin-coupon-card-top h3 {
+  margin-top: 8px;
+  font-size: 22px;
+  overflow-wrap: anywhere;
+}
+
+.admin-coupon-status {
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-coupon-status.active {
+  background: #e7f7ec;
+  color: #18753b;
+}
+
+.admin-coupon-status.inactive {
+  background: #f1f1f1;
+  color: #666;
+}
+
+.admin-coupon-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 22px 0;
+}
+
+.admin-coupon-details div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.admin-coupon-details strong {
+  overflow-wrap: anywhere;
+}
+
+.admin-coupon-message {
+  padding: 12px 14px;
+  margin: 14px 0;
+  border-radius: 10px;
+  background: #e7f7ec;
+  color: #18753b;
+}
+
+@media (max-width: 650px) {
+  .admin-coupon-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-coupon-list,
+  .admin-coupon-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-coupon-toolbar,
+  .admin-coupon-card-top {
+    align-items: flex-start;
+  }
+
+  .admin-coupon-expiry {
+    grid-column: auto;
+  }
+}

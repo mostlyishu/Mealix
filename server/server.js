@@ -730,10 +730,34 @@ app.post("/api/coupons/validate", authMiddleware, async (req, res) => {
 // =========================
 
 app.post("/api/orders", authMiddleware, async (req, res) => {
-  const { items, kitchen_note, reward_points = 0 } = req.body;
+  const {
+    items,
+    kitchen_note,
+    reward_points = 0,
+    coupon_code = ""
+  } = req.body;
 
   const userId = Number(req.user.id);
   const pointsRequested = Number(reward_points);
+  const couponCode =
+  typeof coupon_code === "string"
+    ? coupon_code.trim().toUpperCase()
+    : "";
+
+if (
+  typeof coupon_code !== "string" ||
+  (couponCode && !/^[A-Z0-9_-]{1,30}$/.test(couponCode))
+) {
+  return res.status(400).json({
+    message: "Invalid coupon code"
+  });
+}
+
+if (couponCode && pointsRequested > 0) {
+  return res.status(400).json({
+    message: "Coupons and Rewards cannot be combined"
+  });
+}
 
   if (
     !Number.isSafeInteger(pointsRequested) ||
@@ -874,7 +898,70 @@ app.post("/api/orders", authMiddleware, async (req, res) => {
       100: 2500
     };
 
-    const discountPaise = rewardDiscounts[pointsRequested];
+    let discountPaise = rewardDiscounts[pointsRequested];
+    let appliedCoupon = null;
+
+    if (couponCode) {
+      const [coupons] = await connection.query(
+        `SELECT *
+     FROM coupons
+     WHERE code = ?
+     FOR UPDATE`,
+        [couponCode]
+      );
+
+      if (coupons.length === 0) {
+        await connection.rollback();
+        return res.status(400).json({
+          message: "Coupon not found"
+        });
+      }
+
+      const coupon = coupons[0];
+
+      if (
+        !Number(coupon.is_active) ||
+        new Date(coupon.expires_at).getTime() <= Date.now() ||
+        (coupon.usage_limit !== null &&
+          Number(coupon.used_count) >= Number(coupon.usage_limit))
+      ) {
+        await connection.rollback();
+        return res.status(400).json({
+          message: "Coupon is expired or unavailable"
+        });
+      }
+
+      if (
+        subtotalPaise <
+        Math.round(Number(coupon.min_order_amount) * 100)
+      ) {
+        await connection.rollback();
+        return res.status(400).json({
+          message: `Minimum order ₹${coupon.min_order_amount} required`
+        });
+      }
+
+      let couponDiscountPaise =
+        coupon.discount_type === "percentage"
+          ? Math.round(
+            subtotalPaise * Number(coupon.discount_value) / 100
+          )
+          : Math.round(Number(coupon.discount_value) * 100);
+
+      if (coupon.max_discount !== null) {
+        couponDiscountPaise = Math.min(
+          couponDiscountPaise,
+          Math.round(Number(coupon.max_discount) * 100)
+        );
+      }
+
+      discountPaise = Math.max(
+        0,
+        Math.min(subtotalPaise, couponDiscountPaise)
+      );
+
+      appliedCoupon = coupon;
+    }
 
     if (pointsRequested > 0) {
       if (subtotalPaise < 10000) {
@@ -915,20 +1002,23 @@ app.post("/api/orders", authMiddleware, async (req, res) => {
     const discount = discountPaise / 100;
     const finalTotal = (subtotalPaise - discountPaise) / 100;
 
-    const [orderResult] = await connection.query(
-      `INSERT INTO orders
-       (user_id, subtotal_amount, discount_amount,
-        reward_points_used, total_amount, kitchen_note)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        userId,
-        subtotal,
-        discount,
-        pointsRequested,
-        finalTotal,
-        cleanKitchenNote || null
-      ]
-    );
+const [orderResult] = await connection.query(
+  `INSERT INTO orders
+   (user_id, subtotal_amount, discount_amount,
+    reward_points_used, total_amount, kitchen_note,
+    coupon_id, coupon_code)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  [
+    userId,
+    subtotal,
+    discount,
+    pointsRequested,
+    finalTotal,
+    cleanKitchenNote || null,
+    appliedCoupon ? appliedCoupon.id : null,
+    appliedCoupon ? appliedCoupon.code : null
+  ]
+);
 
     const orderId = orderResult.insertId;
     const pickupToken =
@@ -974,6 +1064,26 @@ app.post("/api/orders", authMiddleware, async (req, res) => {
         ]
       );
     }
+    if (appliedCoupon) {
+  await connection.query(
+    `UPDATE coupons
+     SET used_count = used_count + 1
+     WHERE id = ?`,
+    [appliedCoupon.id]
+  );
+
+  await connection.query(
+    `INSERT INTO coupon_redemptions
+     (coupon_id, order_id, user_id, discount_amount)
+     VALUES (?, ?, ?, ?)`,
+    [
+      appliedCoupon.id,
+      orderId,
+      userId,
+      discount
+    ]
+  );
+}
 
     await connection.commit();
 
@@ -984,7 +1094,8 @@ app.post("/api/orders", authMiddleware, async (req, res) => {
       subtotal,
       discount,
       totalAmount: finalTotal,
-      rewardPointsUsed: pointsRequested
+      rewardPointsUsed: pointsRequested,
+      couponApplied: appliedCoupon ? appliedCoupon.code : null
     });
 
   } catch (error) {
@@ -1576,6 +1687,230 @@ db.query(
 );
   }
 );
+
+
+/* =========================
+   ADMIN COUPON MANAGEMENT
+========================= */
+
+// GET ALL COUPONS
+app.get(
+  "/api/admin/coupons",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res) => {
+    try {
+      const [coupons] = await transactionPool.query(
+        `SELECT
+           id,
+           code,
+           discount_type,
+           discount_value,
+           min_order_amount,
+           max_discount,
+           usage_limit,
+           used_count,
+           expires_at,
+           is_active,
+           created_at
+         FROM coupons
+         ORDER BY created_at DESC`
+      );
+
+      return res.json(coupons);
+    } catch (error) {
+      console.error("Fetch admin coupons error:", error);
+      return res.status(500).json({
+        message: "Failed to fetch coupons"
+      });
+    }
+  }
+);
+
+// CREATE COUPON
+app.post(
+  "/api/admin/coupons",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res) => {
+    const {
+      code,
+      discount_type,
+      discount_value,
+      min_order_amount = 0,
+      max_discount = null,
+      usage_limit = null,
+      expires_at
+    } = req.body;
+
+    const cleanCode =
+      typeof code === "string"
+        ? code.trim().toUpperCase()
+        : "";
+
+    const value = Number(discount_value);
+    const minimum = Number(min_order_amount);
+    const maximum =
+      max_discount === null || max_discount === ""
+        ? null
+        : Number(max_discount);
+    const limit =
+      usage_limit === null || usage_limit === ""
+        ? null
+        : Number(usage_limit);
+
+    const expiry = new Date(expires_at);
+
+    if (!/^[A-Z0-9_-]{1,30}$/.test(cleanCode)) {
+      return res.status(400).json({
+        message: "Enter a valid coupon code"
+      });
+    }
+
+    if (!["percentage", "fixed"].includes(discount_type)) {
+      return res.status(400).json({
+        message: "Discount type must be percentage or fixed"
+      });
+    }
+
+    if (
+      !Number.isFinite(value) ||
+      value <= 0 ||
+      (discount_type === "percentage" && value > 100)
+    ) {
+      return res.status(400).json({
+        message: "Enter a valid discount value"
+      });
+    }
+
+    if (!Number.isFinite(minimum) || minimum < 0) {
+      return res.status(400).json({
+        message: "Minimum order amount cannot be negative"
+      });
+    }
+
+    if (
+      maximum !== null &&
+      (!Number.isFinite(maximum) || maximum <= 0)
+    ) {
+      return res.status(400).json({
+        message: "Maximum discount must be greater than zero"
+      });
+    }
+
+    if (
+      limit !== null &&
+      (!Number.isSafeInteger(limit) || limit <= 0)
+    ) {
+      return res.status(400).json({
+        message: "Usage limit must be a positive whole number"
+      });
+    }
+
+    if (
+      !expires_at ||
+      !Number.isFinite(expiry.getTime()) ||
+      expiry.getTime() <= Date.now()
+    ) {
+      return res.status(400).json({
+        message: "Expiry must be a valid future date and time"
+      });
+    }
+
+    try {
+      const [result] = await transactionPool.query(
+        `INSERT INTO coupons
+         (
+           code,
+           discount_type,
+           discount_value,
+           min_order_amount,
+           max_discount,
+           usage_limit,
+           expires_at
+         )
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          cleanCode,
+          discount_type,
+          value,
+          minimum,
+          maximum,
+          limit,
+          expires_at.replace("T", " ")
+        ]
+      );
+
+      return res.status(201).json({
+        message: "Coupon created successfully",
+        couponId: result.insertId,
+        code: cleanCode
+      });
+    } catch (error) {
+      if (error.code === "ER_DUP_ENTRY") {
+        return res.status(409).json({
+          message: "This coupon code already exists"
+        });
+      }
+
+      console.error("Create admin coupon error:", error);
+      return res.status(500).json({
+        message: "Failed to create coupon"
+      });
+    }
+  }
+);
+
+// ENABLE / DISABLE COUPON
+app.patch(
+  "/api/admin/coupons/:id/status",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res) => {
+    const couponId = Number(req.params.id);
+    const { is_active } = req.body;
+
+    if (!Number.isSafeInteger(couponId) || couponId <= 0) {
+      return res.status(400).json({
+        message: "Invalid coupon ID"
+      });
+    }
+
+    if (typeof is_active !== "boolean") {
+      return res.status(400).json({
+        message: "is_active must be true or false"
+      });
+    }
+
+    try {
+      const [result] = await transactionPool.query(
+        `UPDATE coupons
+         SET is_active = ?
+         WHERE id = ?`,
+        [is_active, couponId]
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          message: "Coupon not found"
+        });
+      }
+
+      return res.json({
+        message: is_active
+          ? "Coupon enabled successfully"
+          : "Coupon disabled successfully",
+        is_active
+      });
+    } catch (error) {
+      console.error("Update coupon status error:", error);
+      return res.status(500).json({
+        message: "Failed to update coupon status"
+      });
+    }
+  }
+);
+
 
 
 
