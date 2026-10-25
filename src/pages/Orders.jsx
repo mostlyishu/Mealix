@@ -8,6 +8,7 @@ function Orders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cancellingId, setCancellingId] = useState(null);
+  const [celebratingOrders, setCelebratingOrders] = useState({});
 
   const navigate = useNavigate();
 
@@ -37,7 +38,41 @@ function Orders() {
 
       const data = await response.json();
 
-      setOrders(data);
+      setOrders((previousOrders) => {
+  const previousStatuses = new Map();
+
+  previousOrders.forEach((item) => {
+    const id = String(item.order_id);
+
+    if (!previousStatuses.has(id)) {
+      previousStatuses.set(id, item.status);
+    }
+  });
+
+  const newlyCelebrating = {};
+
+  data.forEach((item) => {
+    const id = String(item.order_id);
+    const previousStatus = previousStatuses.get(id);
+
+    if (
+      previousStatus &&
+      previousStatus !== item.status &&
+      ["Ready", "Completed"].includes(item.status)
+    ) {
+      newlyCelebrating[id] = item.status;
+    }
+  });
+
+  if (Object.keys(newlyCelebrating).length > 0) {
+    setCelebratingOrders((current) => ({
+      ...current,
+      ...newlyCelebrating
+    }));
+  }
+
+  return data;
+});
     } catch (error) {
       setError(error.message);
     } finally {
@@ -299,6 +334,50 @@ function Orders() {
                   )}
 
                 </div>
+
+                {celebratingOrders[String(order.order_id)] && (
+  <motion.div
+    className="order-celebration"
+    initial={{ opacity: 0, y: 12, scale: 0.96 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    transition={{ duration: 0.35, ease: "easeOut" }}
+    role="status"
+  >
+    <span className="order-celebration-icon">
+      {celebratingOrders[String(order.order_id)] === "Ready"
+        ? "🎉"
+        : "✨"}
+    </span>
+
+    <div>
+      <strong>
+        {celebratingOrders[String(order.order_id)] === "Ready"
+          ? "Your meal is ready!"
+          : "Order completed!"}
+      </strong>
+
+      <p>
+        {celebratingOrders[String(order.order_id)] === "Ready"
+          ? "Show your pickup token at the counter and enjoy your meal."
+          : "Thanks for ordering with Mealix. Enjoy your next campus bite!"}
+      </p>
+    </div>
+
+    <button
+      type="button"
+      aria-label="Dismiss celebration"
+      onClick={() =>
+        setCelebratingOrders((current) => {
+          const updated = { ...current };
+          delete updated[String(order.order_id)];
+          return updated;
+        })
+      }
+    >
+      ×
+    </button>
+  </motion.div>
+)}
 
       {/* STATUS TRACKER */}
 

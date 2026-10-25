@@ -11940,3 +11940,48 @@ font-weight: 600;
     transition: none;
   }
 }
+.order-celebration {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid #f4d6a2;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fffaf0, #fff2d9);
+  color: #68451c;
+}
+
+.order-celebration-icon {
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.order-celebration > div {
+  flex: 1;
+}
+
+.order-celebration strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.order-celebration p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.order-celebration button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-celebration {
+    scroll-behavior: auto;
+  }
+}
