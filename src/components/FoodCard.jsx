@@ -1,4 +1,7 @@
 
+import { useEffect, useState } from "react";
+import { motion } from "motion/react";
+
 function FoodCard({
   id,
   name,
@@ -12,6 +15,18 @@ function FoodCard({
   onIncrease,
   onDecrease
 }) {
+  const [justAdded, setJustAdded] = useState(false);
+
+  useEffect(() => {
+    if (!justAdded) return;
+
+    const timer = setTimeout(() => {
+      setJustAdded(false);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [justAdded]);
+
   const getFoodEmoji = () => {
     const foodName = name.toLowerCase();
 
@@ -25,8 +40,15 @@ function FoodCard({
     return "🍽️";
   };
 
+  function handleAdd() {
+    onAdd();
+    setJustAdded(true);
+  }
+
   return (
-    <article className={`food-card ${!available ? "unavailable" : ""}`}>
+    <article
+      className={`food-card ${!available ? "unavailable" : ""}`}
+    >
       <div className="food-image">
         {imageUrl && (
           <img
@@ -63,11 +85,11 @@ function FoodCard({
       <div className="food-card-content">
         <h3>{name}</h3>
 
-              {description?.trim() && (
-                  <p className="food-card-description">
-                      {description}
-                  </p>
-              )}
+        {description?.trim() && (
+          <p className="food-card-description">
+            {description}
+          </p>
+        )}
 
         <div className="food-bottom">
           <div className="food-price">
@@ -81,36 +103,48 @@ function FoodCard({
             </button>
           ) : quantity > 0 ? (
             <div className="food-quantity-control">
-              <button
+              <motion.button
                 type="button"
+                whileTap={{ scale: 0.85 }}
                 onClick={() => onDecrease(id)}
                 aria-label={`Decrease ${name}`}
               >
                 −
-              </button>
+              </motion.button>
 
-              <span>{quantity}</span>
+              <motion.span
+                key={quantity}
+                initial={{ scale: 1.25 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.15 }}
+              >
+                {quantity}
+              </motion.span>
 
-              <button
+              <motion.button
                 type="button"
+                whileTap={{ scale: 0.85 }}
                 onClick={() => onIncrease(id)}
                 aria-label={`Increase ${name}`}
               >
                 +
-              </button>
+              </motion.button>
             </div>
           ) : (
-            <button
+            <motion.button
               type="button"
               className="food-add-button"
-              onClick={onAdd}
+              onClick={handleAdd}
+              whileTap={{ scale: 0.94 }}
+              animate={justAdded ? { scale: [1, 1.06, 1] } : {}}
+              transition={{ duration: 0.2 }}
             >
-              + Add
-            </button>
+              {justAdded ? "Added ✓" : "+ Add"}
+            </motion.button>
           )}
         </div>
       </div>
-    </article>
+</article>
   );
 }
 

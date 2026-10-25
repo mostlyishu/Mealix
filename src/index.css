@@ -1751,12 +1751,40 @@ line-height: 1.1;
     border-color var(--transition);
 }
 
+.food-card {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+
+  transform: translateY(0);
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 320ms ease,
+    border-color 320ms ease;
+
+  will-change: transform;
+}
+
 .food-card:hover {
-  transform: translateY(-5px);
-
+  transform: translateY(-4px);
   border-color: #ead5cb;
-
   box-shadow: var(--shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .food-card {
+    transition: none;
+    will-change: auto;
+  }
+
+  .food-card:hover {
+    transform: none;
+  }
 }
 
 /* Food image */
@@ -11474,5 +11502,103 @@ font-weight: 600;
 
   .admin-coupon-expiry {
     grid-column: auto;
+  }
+}
+
+/* Mealix menu loading skeletons */
+
+.food-skeleton-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.food-skeleton-image,
+.food-skeleton-line,
+.food-skeleton-price,
+.food-skeleton-button {
+  background: linear-gradient(
+    100deg,
+    #f0ece8 25%,
+    #faf7f4 45%,
+    #f0ece8 65%
+  );
+  background-size: 200% 100%;
+  animation: mealix-skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.food-skeleton-image {
+  width: 100%;
+  height: 205px;
+}
+
+.food-skeleton-content {
+  padding: 19px;
+}
+
+.food-skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+}
+
+.food-skeleton-title {
+  width: 65%;
+  height: 17px;
+  margin-bottom: 14px;
+}
+
+.food-skeleton-description {
+  width: 90%;
+  margin-bottom: 24px;
+}
+
+.food-skeleton-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.food-skeleton-price {
+  width: 55px;
+  height: 22px;
+  border-radius: 6px;
+}
+
+.food-skeleton-button {
+  width: 82px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+@keyframes mealix-skeleton-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .food-skeleton-image,
+  .food-skeleton-line,
+  .food-skeleton-price,
+  .food-skeleton-button {
+    animation: none;
+    background: #f0ece8;
+  }
+}
+
+@media (max-width: 500px) {
+  .food-skeleton-image {
+    height: 145px;
+  }
+
+  .food-skeleton-content {
+    padding: 12px;
   }
 }

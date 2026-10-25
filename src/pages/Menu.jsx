@@ -693,17 +693,36 @@ async function findBreakMeals() {
 
       {/* LOADING */}
 
+      
+      {/* LOADING SKELETONS */}
+
       {loading && (
-        <div className="menu-state-card">
-          <div className="menu-loader"></div>
+        <section
+          className="food-grid menu-skeleton-grid"
+          aria-label="Loading menu"
+          aria-busy="true"
+        >
+          {Array.from({ length: 6 }).map((_, index) => (
+            <article
+              className="food-skeleton-card"
+              key={index}
+            >
+              <div className="food-skeleton-image" />
 
-          <h3>Preparing the menu...</h3>
+              <div className="food-skeleton-content">
+                <div className="food-skeleton-line food-skeleton-title" />
+                <div className="food-skeleton-line food-skeleton-description" />
 
-          <p>
-            Fetching today's campus favourites.
-          </p>
-        </div>
+                <div className="food-skeleton-bottom">
+                  <div className="food-skeleton-price" />
+                  <div className="food-skeleton-button" />
+                </div>
+              </div>
+            </article>
+          ))}
+        </section>
       )}
+
 
 
       {/* ERROR */}
