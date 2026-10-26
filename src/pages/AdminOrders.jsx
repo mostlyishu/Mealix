@@ -18,6 +18,7 @@ const [couponMessage, setCouponMessage] = useState("");
 const [showCouponForm, setShowCouponForm] = useState(false);
 const [savingCoupon, setSavingCoupon] = useState(false);
 const [updatingCouponId, setUpdatingCouponId] = useState(null);
+const [deletingCouponId, setDeletingCouponId] = useState(null);
 
 const [couponForm, setCouponForm] = useState({
   code: "",
@@ -182,6 +183,51 @@ async function toggleCouponStatus(coupon) {
     setUpdatingCouponId(null);
   }
 }
+
+
+async function deleteCoupon(coupon) {
+  if (updatingCouponId !== null || deletingCouponId !== null) {
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Are you sure you want to permanently delete coupon "${coupon.code}"?`
+  );
+
+  if (!confirmed) return;
+
+  setDeletingCouponId(coupon.id);
+  setCouponError("");
+  setCouponMessage("");
+
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(
+      `${API_URL}/api/admin/coupons/${coupon.id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to delete coupon");
+    }
+
+    setCouponMessage(data.message);
+    await fetchCoupons();
+  } catch (error) {
+    setCouponError(error.message);
+  } finally {
+    setDeletingCouponId(null);
+  }
+}
+
 
   // =========================
   // UPDATE ORDER STATUS
@@ -894,18 +940,39 @@ function getStatusActionLabel(status) {
               </div>
             </div>
 
-            <button
-              type="button"
-              className="admin-status-action-button"
-              disabled={updatingCouponId !== null}
-              onClick={() => toggleCouponStatus(coupon)}
-            >
-              {updatingCouponId === coupon.id
-                ? "Updating..."
-                : active
-                  ? "Disable Coupon"
-                  : "Enable Coupon"}
-            </button>
+
+<div className="admin-coupon-actions">
+  <button
+    type="button"
+    className="admin-status-action-button"
+    disabled={
+      updatingCouponId !== null ||
+      deletingCouponId !== null
+    }
+    onClick={() => toggleCouponStatus(coupon)}
+  >
+    {updatingCouponId === coupon.id
+      ? "Updating..."
+      : active
+        ? "Disable Coupon"
+        : "Enable Coupon"}
+  </button>
+
+  <button
+    type="button"
+    className="admin-coupon-delete-button"
+    onClick={() => deleteCoupon(coupon)}
+    disabled={
+      deletingCouponId !== null ||
+      updatingCouponId !== null
+    }
+  >
+    {deletingCouponId === coupon.id
+      ? "Deleting..."
+      : "Delete Coupon"}
+  </button>
+</div>
+
           </article>
         );
       })}

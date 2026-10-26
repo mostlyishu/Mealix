@@ -1912,6 +1912,57 @@ app.patch(
 );
 
 
+/* =========================
+   DELETE ADMIN COUPON
+   ========================= */
+
+app.delete(
+  "/api/admin/coupons/:id",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res) => {
+    const couponId = Number(req.params.id);
+
+    if (!Number.isSafeInteger(couponId) || couponId <= 0) {
+      return res.status(400).json({
+        message: "Invalid coupon ID",
+      });
+    }
+
+    try {
+      const [result] = await transactionPool.query(
+        "DELETE FROM coupons WHERE id = ?",
+        [couponId]
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          message: "Coupon not found",
+        });
+      }
+
+      return res.json({
+        message: "Coupon deleted successfully",
+      });
+    } catch (error) {
+      if (
+        error.code === "ER_ROW_IS_REFERENCED_2" ||
+        error.code === "ER_ROW_IS_REFERENCED"
+      ) {
+        return res.status(409).json({
+          message:
+            "This coupon is linked to existing orders or redemption records. Disable it instead of deleting it.",
+        });
+      }
+
+      console.error("Delete admin coupon error:", error);
+
+      return res.status(500).json({
+        message: "Failed to delete coupon",
+      });
+    }
+  }
+);
 
 
 // =========================
