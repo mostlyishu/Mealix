@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import API_URL from "../config/api";
@@ -9,76 +9,94 @@ function Orders() {
   const [error, setError] = useState("");
   const [cancellingId, setCancellingId] = useState(null);
   const [celebratingOrders, setCelebratingOrders] = useState({});
+  const [statusNotification, setStatusNotification] = useState(null);
 
+  const previousStatusesRef = useRef(new Map());
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchOrders();
+
+    const intervalId = setInterval(() => {
+      fetchOrders(true);
+    }, 15000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
-  async function fetchOrders() {
-    try {
-      setLoading(true);
-      setError("");
 
-      const token = localStorage.getItem("token");
+async function fetchOrders(silent = false) {
+  try {
+    if (!silent) setLoading(true);
+    setError("");
 
-      const response = await fetch(
-        `${API_URL}/api/orders`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${API_URL}/api/orders`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch orders");
+    }
+
+    const data = await response.json();
+    const previousStatuses = previousStatusesRef.current;
+    const newlyCelebrating = {};
+    let latestNotification = null;
+
+    // Detect changes without triggering side effects
+    // inside a React state updater.
+    data.forEach((item) => {
+      const id = String(item.order_id);
+      const previousStatus = previousStatuses.get(id);
+
+      if (previousStatus && previousStatus !== item.status) {
+        latestNotification = {
+          id: `${id}-${item.status}-${Date.now()}`,
+          orderId: id,
+          status: item.status,
+        };
+
+        if (["Ready", "Completed"].includes(item.status)) {
+          newlyCelebrating[id] = item.status;
         }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch orders");
       }
+    });
 
-      const data = await response.json();
+    // Remember the latest status for the next refresh.
+    const updatedStatuses = new Map();
 
-      setOrders((previousOrders) => {
-  const previousStatuses = new Map();
+    data.forEach((item) => {
+      updatedStatuses.set(String(item.order_id), item.status);
+    });
 
-  previousOrders.forEach((item) => {
-    const id = String(item.order_id);
+    previousStatusesRef.current = updatedStatuses;
 
-    if (!previousStatuses.has(id)) {
-      previousStatuses.set(id, item.status);
+    setOrders(data);
+
+    if (Object.keys(newlyCelebrating).length > 0) {
+      setCelebratingOrders((current) => ({
+        ...current,
+        ...newlyCelebrating,
+      }));
     }
-  });
 
-  const newlyCelebrating = {};
-
-  data.forEach((item) => {
-    const id = String(item.order_id);
-    const previousStatus = previousStatuses.get(id);
-
-    if (
-      previousStatus &&
-      previousStatus !== item.status &&
-      ["Ready", "Completed"].includes(item.status)
-    ) {
-      newlyCelebrating[id] = item.status;
+    if (latestNotification) {
+      setStatusNotification(latestNotification);
     }
-  });
-
-  if (Object.keys(newlyCelebrating).length > 0) {
-    setCelebratingOrders((current) => ({
-      ...current,
-      ...newlyCelebrating
-    }));
-  }
-
-  return data;
-});
-    } catch (error) {
+  } catch (error) {
+    // Keep existing orders visible during a failed background refresh.
+    if (!silent) {
       setError(error.message);
-    } finally {
-      setLoading(false);
     }
+  } finally {
+    if (!silent) setLoading(false);
   }
+}
+
   async function cancelOrder(orderId) {
   const confirmed = window.confirm(
     "Are you sure you want to cancel this order?"
@@ -196,6 +214,34 @@ function Orders() {
           {loading ? "Refreshing..." : "Refresh Orders"}
         </button>
       </section>
+
+
+{statusNotification && (
+  <motion.div
+    className="order-status-notification"
+    key={statusNotification.id}
+    initial={{ opacity: 0, y: -15, scale: 0.96 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    role="status"
+  >
+    <div>
+      <strong>Order status updated!</strong>
+      <p>
+        Order #{statusNotification.orderId} is now{" "}
+        <strong>{statusNotification.status}</strong>.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      aria-label="Dismiss notification"
+      onClick={() => setStatusNotification(null)}
+    >
+      ×
+    </button>
+  </motion.div>
+)}
+
 
       {/* ERROR */}
 

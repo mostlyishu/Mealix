@@ -18,6 +18,7 @@ import GroupBite from "./components/GroupBite";
 import PickupBoard from "./pages/PickupBoard";
 import Rewards from "./pages/Rewards";
 import Favourites from "./pages/SavedBites";
+import BackToTop from "./components/BackToTop";
 
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -79,6 +80,7 @@ function AnimatedRoutes() {
           </Routes>
         </motion.div>
       </AnimatePresence>
+      <BackToTop />
     </>
   );
 }
