@@ -1,23 +1,23 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-
+import { lazy, Suspense } from "react";
+const Home = lazy(() => import("./pages/Home"));
+const Menu = lazy(() => import("./pages/Menu"));
+const Orders = lazy(() => import("./pages/Orders"));
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess"));
+const AdminOrders = lazy(() => import("./pages/AdminOrders"));
+const AdminFoods = lazy(() => import("./pages/AdminFoods"));
+const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
+const GroupBite = lazy(() => import("./components/GroupBite"));
+const PickupBoard = lazy(() => import("./pages/PickupBoard"));
+const Rewards = lazy(() => import("./pages/Rewards"));
+const Favourites = lazy(() => import("./pages/SavedBites"));
 import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import Menu from "./pages/Menu";
-import Orders from "./pages/Orders";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import CartPage from "./pages/CartPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
-import OrderSuccess from "./pages/OrderSuccess";
-import AdminOrders from "./pages/AdminOrders";
-import AdminFoods from "./pages/AdminFoods";
-import AdminAnalytics from "./pages/AdminAnalytics";
-import GroupBite from "./components/GroupBite";
-import PickupBoard from "./pages/PickupBoard";
-import Rewards from "./pages/Rewards";
-import Favourites from "./pages/SavedBites";
 import BackToTop from "./components/BackToTop";
 
 import { CartProvider } from "./context/CartContext";
@@ -39,6 +39,7 @@ function AnimatedRoutes() {
           exit={{ opacity: 0, y: -5 }}
           transition={{ duration: 0.22, ease: "easeOut" }}
         >
+          <Suspense fallback={<div className="page-loading">Loading...</div>}>
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<Home />} />
             <Route path="/menu" element={<Menu />} />
@@ -78,6 +79,7 @@ function AnimatedRoutes() {
             <Route path="/groupbite" element={<GroupBite />} />
             <Route path="/pickup-board" element={<PickupBoard />} />
           </Routes>
+        </Suspense>
         </motion.div>
       </AnimatePresence>
       <BackToTop />
