@@ -4,16 +4,18 @@ import API_URL from "../config/api";
 import BreakSync from "../components/BreakSync";
 import { useAuth } from "../context/AuthContext";
 
-function Home() {
-    const { isLoggedIn, user } = useAuth();
-    const isStudent = isLoggedIn && user?.role === "student";
-    const [popularFoods, setPopularFoods] = useState([]);
-const heroPhrases = [
+const HERO_PHRASES = [
   "Better breaks.",
   "Faster bites.",
   "Happier cravings.",
   "Smarter dining."
 ];
+
+function Home() {
+    const { isLoggedIn, user } = useAuth();
+    const isStudent = isLoggedIn && user?.role === "student";
+    const [popularFoods, setPopularFoods] = useState([]);
+
 
 const [heroSlide, setHeroSlide] = useState({
   current: 0,
@@ -24,7 +26,7 @@ const [heroSlide, setHeroSlide] = useState({
 useEffect(() => {
   const timer = setInterval(() => {
     setHeroSlide((slide) => ({
-      current: (slide.current + 1) % heroPhrases.length,
+      current: (slide.current + 1) % HERO_PHRASES.length,
       previous: slide.current,
       sequence: slide.sequence + 1,
     }));
@@ -93,7 +95,7 @@ function getFoodEmoji(name) {
                   className="home-phrase home-phrase-exit"
                   aria-hidden="true"
                 >
-                  {heroPhrases[heroSlide.previous]}
+                  {HERO_PHRASES[heroSlide.previous]}
                 </span>
               )}
 
@@ -102,7 +104,7 @@ function getFoodEmoji(name) {
                 className={`home-phrase ${heroSlide.previous !== null ? "home-phrase-enter" : ""
                   }`}
               >
-                {heroPhrases[heroSlide.current]}
+                {HERO_PHRASES[heroSlide.current]}
               </span>
             </span>
           </h1>

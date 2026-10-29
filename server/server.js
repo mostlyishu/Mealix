@@ -1174,38 +1174,32 @@ order_items.quantity
 
       // Add queue information to every returned row
       const ordersWithEstimate = results.map((item) => {
-        let ordersAhead = 0;
-        let estimatedPickup = "";
+let ordersAhead = 0;
+let estimatedPickup;
 
-        if (item.status === "Pending") {
-          const currentPosition = activeOrders.findIndex(
-            (order) => order.id === item.order_id
-          );
+if (item.status === "Pending") {
+  const currentPosition = activeOrders.findIndex(
+    (order) => order.id === item.order_id
+  );
 
-          ordersAhead =
-            currentPosition >= 0
-              ? currentPosition
-              : 0;
+  ordersAhead =
+    currentPosition >= 0
+      ? currentPosition
+      : 0;
 
-          const minimumMinutes =
-            5 + ordersAhead * 5;
+  const minimumMinutes = 5 + ordersAhead * 5;
+  const maximumMinutes = minimumMinutes + 5;
 
-          const maximumMinutes =
-            minimumMinutes + 5;
-
-          estimatedPickup =
-            `${minimumMinutes}–${maximumMinutes} minutes`;
-        } else if (item.status === "Preparing") {
-          estimatedPickup = "5–10 minutes";
-        } else if (item.status === "Ready") {
-          estimatedPickup = "Ready for pickup";
-        } else if (item.status === "Completed") {
-          estimatedPickup = "Order collected";
-        } else if (item.status === "Cancelled") {
-          estimatedPickup = "Order cancelled";
-        } else {
-          estimatedPickup = "Calculating...";
-        }
+  estimatedPickup =
+    `${minimumMinutes}–${maximumMinutes} minutes`;
+} else {
+  estimatedPickup = {
+    Preparing: "5–10 minutes",
+    Ready: "Ready for pickup",
+    Completed: "Order collected",
+    Cancelled: "Order cancelled"
+  }[item.status] || "Calculating...";
+}
 
         return {
           ...item,

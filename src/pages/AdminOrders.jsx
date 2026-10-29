@@ -162,7 +162,7 @@ async function toggleCouponStatus(coupon) {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          is_active: !Boolean(coupon.is_active),
+          is_active: !coupon.is_active,
         }),
       }
     );

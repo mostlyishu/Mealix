@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import API_URL from "../config/api";
+import { useEffect, useState } from "react";import API_URL from "../config/api";
 import {
   BarChart,
   Bar,
@@ -22,15 +21,20 @@ function AdminAnalytics() {
   const [categoryAnalytics, setCategoryAnalytics] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
+  const timer = setTimeout(() => {
     loadAnalytics();
-  }, []);
+  }, 0);
+
+  return () => clearTimeout(timer);
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
 
   // =========================
   // LOAD COMPLETE DASHBOARD
   // =========================
 
-  async function loadAnalytics(isRefresh = false) {
+  async function loadAnalytics(isRefresh = false) {   
     if (isRefresh) {
       setRefreshing(true);
     } else {
@@ -57,7 +61,6 @@ function AdminAnalytics() {
       setRefreshing(false);
     }
   }
-
   // =========================
   // CATEGORY ANALYTICS
   // =========================

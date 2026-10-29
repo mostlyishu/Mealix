@@ -38,7 +38,11 @@ function KitchenPulse({ refreshKey = 0 }) {
   }, []);
 
   useEffect(() => {
-    fetchPulse();
+    const timer = setTimeout(() => {
+      fetchPulse();
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [fetchPulse, refreshKey]);
 
   const workload = Number(

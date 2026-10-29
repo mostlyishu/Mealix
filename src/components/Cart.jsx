@@ -50,26 +50,20 @@ const cartSignature = JSON.stringify(
 );
 
 useEffect(() => {
+  // Reset the coupon whenever cart contents change.
+  // This state update is intentional.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   setAppliedCoupon(null);
 }, [cartSignature]);
-
-// YOUR EXISTING REWARDS EFFECT
-useEffect(() => {
-  if (!isLoggedIn) {
-    setPointsBalance(0);
-    setRewardPoints(0);
-    return;
-  }
-
-  // ... remaining existing code
-}, [isLoggedIn]);
-   
+ 
   useEffect(() => {
   if (!isLoggedIn) {
-    setPointsBalance(0);
-    setRewardPoints(0);
-    return;
-  }
+  // Reset rewards when the user logs out.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  setPointsBalance(0);
+  setRewardPoints(0);
+  return;
+}
 
   let active = true;
 
@@ -94,7 +88,7 @@ useEffect(() => {
       if (active) {
         setPointsBalance(Number(data.wallet.points_balance));
       }
-    } catch (error) {
+    } catch {
       if (active) {
         setPointsBalance(0);
         setRewardPoints(0);

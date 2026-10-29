@@ -127,12 +127,18 @@ function GroupBite() {
     }
   }
 
-  useEffect(() => {
-    if (group?.id && token) {
-      fetchCart(group.id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [group?.id, token]);
+useEffect(() => {
+  if (!group?.id || !token) return;
+
+  const groupId = group.id;
+
+  const timer = setTimeout(() => {
+    fetchCart(groupId);
+  }, 0);
+
+  return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [group?.id, token]);
 
   useEffect(() => {
     if (!group?.id) return;
@@ -211,49 +217,37 @@ function GroupBite() {
     }
   }
 
-  async function copyGroupCode() {
-    if (!group?.group_code) return;
+async function copyGroupCode() {
+  if (!group?.group_code) return;
 
-    const code = group.group_code;
-    let success = false;
+  const code = group.group_code;
 
-    try {
-      if (!navigator.clipboard?.writeText) {
-        throw new Error("Clipboard API unavailable");
-      }
-
-      await navigator.clipboard.writeText(code);
-      success = true;
-    } catch {
-      const textarea =
-        document.createElement("textarea");
-
-      textarea.value = code;
-      textarea.setAttribute("readonly", "");
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
-
-      document.body.appendChild(textarea);
-      textarea.focus();
-      textarea.select();
-
-      try {
-        success = document.execCommand("copy");
-      } catch {
-        success = false;
-      } finally {
-        document.body.removeChild(textarea);
-      }
+  try {
+    if (!navigator.clipboard?.writeText) {
+      throw new Error("Clipboard API unavailable");
     }
 
-    setCopied(success);
+    await navigator.clipboard.writeText(code);
+  } catch {
+    const textarea = document.createElement("textarea");
+    textarea.value = code;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
 
-    setMessage(
-      success
-        ? "Group code copied!"
-        : "Copy unavailable. Select the code to copy it manually."
-    );
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    const copied = document.execCommand("copy");
+    textarea.remove();
+
+    if (!copied) {
+      setError("Unable to copy group code. Please copy it manually.");
+      return;
+    }
   }
+
+  setCopied(true);
+}
 
   async function addFood(event) {
     event.preventDefault();
