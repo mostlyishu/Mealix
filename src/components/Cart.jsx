@@ -313,12 +313,21 @@ async function handleApplyCoupon() {
         </p>
       </section>
 
+
       {message && (
-        <div className="cart-message">
-          <span>!</span>
+        <div
+          className={`cart-message ${message === "Coupon applied successfully!"
+              ? "cart-message-success"
+              : "cart-message-error"
+            }`}
+        >
+          <span>
+            {message === "Coupon applied successfully!" ? "✓" : "!"}
+          </span>
           <p>{message}</p>
         </div>
       )}
+
 
       {cart.length === 0 ? (
 
@@ -603,15 +612,14 @@ async function handleApplyCoupon() {
   <button
     type="button"
     className="rewards-toggle"
+                  
                   onClick={() => {
-                    if (appliedCoupon && pendingReward > 0) {
-                      setMessage("Remove your coupon before using Rewards.");
-                      return;
+                    if (!rewardsOpen) {
+                      setPendingReward(rewardPoints);
                     }
-
-                    setRewardPoints(pendingReward);
-                    setRewardsOpen(false);
+                    setRewardsOpen(!rewardsOpen);
                   }}
+
     aria-expanded={rewardsOpen}
     disabled={placingOrder}
   >

@@ -2103,6 +2103,33 @@ line-height: 1.1;
   color: var(--primary-dark);
 }
 
+/* Coupon success message */
+
+.cart-message-success {
+  background: #ecfdf3;
+  border-color: #b7ebc9;
+  color: #187a45;
+}
+
+.cart-message-success > span {
+  background: #22a05a;
+  color: #fff;
+}
+
+/* Error messages */
+
+.cart-message-error {
+  background: #fff1ed;
+  border-color: #f5c9bc;
+  color: #c7462d;
+}
+
+.cart-message-error > span {
+  background: #e65335;
+  color: #fff;
+}
+
+
 .cart-message > span {
   width: 25px;
   height: 25px;
