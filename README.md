@@ -131,36 +131,6 @@ and
 
 ---
 
-## 🖼️ Screenshots
-
-### Homepage
-
-![Mealix Homepage](screenshots/homepage.png)
-
-### Menu
-
-![Mealix Menu](screenshots/menu.png)
-
-### Cart
-
-![Mealix Cart](screenshots/cart.png)
-
-### Order Confirmation
-
-![Order Confirmation](screenshots/order-success.png)
-
-### Admin Dashboard
-
-![Admin Dashboard](screenshots/admin-dashboard.png)
-
-### Admin Analytics
-
-![Admin Analytics](screenshots/admin-analytics.png)
-
-> Screenshots can be updated as the project evolves.
-
----
-
 ## 🛠️ Tech Stack
 
 ### Frontend
