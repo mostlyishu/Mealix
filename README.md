@@ -6,7 +6,7 @@
 
 The platform provides a complete digital ordering experience for students while giving canteen administrators tools to manage orders, food availability, operations, and business insights from one place.
 
-##DEMO and VISUALS : 
+## DEMO and VISUALS : 
 https://lnkd.in/p/dthDqPu9
 https://lnkd.in/p/dQSKVit7
 
