@@ -8,6 +8,7 @@ The platform provides a complete digital ordering experience for students while 
 
 ## DEMO and VISUALS : 
 https://lnkd.in/p/dthDqPu9
+
 https://lnkd.in/p/dQSKVit7
 
 ---
