@@ -486,7 +486,7 @@ function resetForm() {
 
                       <small className="food-image-help">
                           Use a local Mealix image path, e.g.
-                          /images/foods/veg-sandwich.png
+                          /images/foods-webp/veg-sandwich.webp
                       </small>
 
                       {imageUrl && (
